@@ -1025,13 +1025,24 @@ body{background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',sans-serif
   .ov-title{font-size:10px;}
   .ov-desc{font-size:8px;}
   /* Memo panel */
-  #memo-panel{width:100vw;height:60vh;right:0 !important;left:0;top:auto !important;bottom:-60vh;
-    border-left:none;border-top:2px solid var(--border);
+  #memo-panel{
+    position:fixed !important;
+    top:auto !important;
+    right:0 !important;
+    bottom:0 !important;
+    left:0 !important;
+    width:100vw !important;
+    height:60vh !important;
+    border-left:none !important;
+    border-top:2px solid var(--border);
     border-radius:16px 16px 0 0;
     box-shadow:0 -6px 32px rgba(37,26,17,.12);
-    transition:bottom .35s cubic-bezier(.22,1,.36,1) !important;
+    transform:translateY(100%) !important;
+    transition:transform .35s cubic-bezier(.22,1,.36,1) !important;
   }
-  #memo-panel.open{bottom:0 !important;right:0 !important;}
+  #memo-panel.open{
+    transform:translateY(0) !important;
+  }
   .cta{padding:10px 24px;font-size:10px;}
 }
 

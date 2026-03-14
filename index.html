@@ -1,0 +1,2404 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GitHub Copilotでプレゼンが変わる、世界が変わる。</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;700;800&family=Noto+Sans+JP:wght@300;400;500;700&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300;1,600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#faf7f3;
+  --white:#ffffff;
+  --ink:#251a11;
+  --terra:#c95f2a;
+  --terra-l:#f2d4c0;
+  --terra-d:#8c3d18;
+  --sage:#5a8a6e;
+  --muted:#9a8a7c;
+  --border:#e8ddd3;
+  --shadow:rgba(37,26,17,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',sans-serif;font-weight:300;}
+
+#bg-canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;}
+
+/* STAGE */
+#stage{position:relative;width:100vw;height:100vh;overflow:hidden;z-index:1;}
+
+/* SLIDES */
+.slide{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  padding:80px 64px 96px;opacity:0;pointer-events:none;
+  transition:right .35s cubic-bezier(.22,1,.36,1);
+}
+.slide.active{opacity:1;pointer-events:all;}
+.slide.enR{animation:inR .52s cubic-bezier(.22,1,.36,1) forwards;}
+.slide.exL{animation:outL .52s cubic-bezier(.22,1,.36,1) forwards;}
+.slide.enL{animation:inL .52s cubic-bezier(.22,1,.36,1) forwards;}
+.slide.exR{animation:outR .52s cubic-bezier(.22,1,.36,1) forwards;}
+@keyframes inR {from{transform:translateX(60px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes outL{from{transform:translateX(0);opacity:1}to{transform:translateX(-60px);opacity:0}}
+@keyframes inL {from{transform:translateX(-60px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes outR{from{transform:translateX(0);opacity:1}to{transform:translateX(60px);opacity:0}}
+
+/* CHROME */
+#prog{position:fixed;top:0;left:0;right:0;height:3px;background:var(--border);z-index:500;}
+#pbar{height:100%;background:linear-gradient(to right,var(--terra-l),var(--terra));transition:width .4s ease;}
+.top-logo{position:fixed;top:20px;left:26px;z-index:500;font-size:11px;letter-spacing:.13em;color:var(--muted);cursor:pointer;}
+
+/* ── LANG TOGGLE ── */
+#lang-toggle{
+  position:fixed;top:16px;right:100px;z-index:550;
+  display:flex;align-items:center;
+  height:36px;box-sizing:border-box;
+  background:var(--white);border:1.5px solid var(--border);
+  border-radius:8px;padding:2px;
+  box-shadow:0 2px 8px var(--shadow);
+  font-size:10px;font-weight:700;letter-spacing:.08em;
+  cursor:pointer;user-select:none;
+  transition:border-color .2s;
+}
+#lang-toggle:hover{border-color:var(--terra-l);}
+#lang-toggle span{
+  padding:5px 12px;border-radius:6px;
+  transition:all .25s ease;
+  color:var(--muted);
+}
+#lang-toggle span.active{
+  background:var(--terra);color:#fff;
+}
+#hint{
+  position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:500;
+  font-size:10px;letter-spacing:.13em;color:var(--muted);background:var(--white);
+  border:1px solid var(--border);padding:5px 16px;border-radius:20px;
+  box-shadow:0 2px 8px var(--shadow);transition:opacity .8s;white-space:nowrap;
+}
+#hint.gone{opacity:0;pointer-events:none;}
+
+/* NAV */
+#nav{
+  position:fixed;bottom:0;left:0;right:0;height:68px;z-index:500;
+  display:flex;align-items:center;justify-content:space-between;padding:0 48px;
+  background:linear-gradient(to top,rgba(250,247,243,.98) 60%,transparent);
+}
+.nbtn{
+  width:42px;height:42px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--white);color:var(--terra);font-size:17px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;box-shadow:0 2px 8px var(--shadow);user-select:none;
+}
+.nbtn:hover:not(:disabled){background:var(--terra);color:#fff;border-color:var(--terra);}
+.nbtn:disabled{opacity:.22;cursor:default;}
+#ctr{font-size:11px;letter-spacing:.18em;color:var(--muted);min-width:52px;text-align:center;}
+#dots{display:flex;gap:5px;align-items:center;}
+#copyright{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--muted);opacity:.45;letter-spacing:.04em;}
+#copyright a{color:inherit;text-decoration:none;}
+#copyright a:hover{opacity:.8;text-decoration:underline;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--border);border:1.5px solid var(--terra-l);cursor:pointer;transition:all .25s;}
+.dot.on{background:var(--terra);border-color:var(--terra);width:18px;border-radius:3px;}
+
+/* COMMON */
+.eyebrow{font-size:10px;font-weight:700;letter-spacing:.36em;text-transform:uppercase;color:var(--terra);margin-bottom:18px;}
+.pill{display:inline-block;background:var(--terra-l);color:var(--terra-d);font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;padding:6px 18px;border-radius:20px;margin-bottom:22px;}
+
+/* S1 TITLE */
+#s1{text-align:center;}
+#s1 h1{font-family:'Shippori Mincho B1',serif;font-size:clamp(36px,5.5vw,72px);font-weight:800;line-height:1.22;letter-spacing:-.01em;margin-bottom:24px;}
+#s1 h1 .it{display:block;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;font-size:clamp(28px,4.5vw,58px);color:var(--terra);}
+#s1 p{font-size:clamp(13px,1.5vw,15px);color:var(--muted);line-height:2.1;max-width:450px;margin:0 auto;}
+
+/* S2 MANIFESTO */
+#s2{text-align:center;}
+#s2 .oq{font-family:'Cormorant Garamond',serif;font-size:18vw;color:rgba(201,95,42,.07);position:absolute;top:8%;left:4%;line-height:1;pointer-events:none;user-select:none;}
+#s2 blockquote{font-family:'Shippori Mincho B1',serif;font-size:clamp(17px,2.5vw,26px);font-weight:400;line-height:2.3;position:relative;z-index:1;}
+#s2 blockquote strong{color:var(--terra);font-weight:700;}
+#s2 .attr{margin-top:40px;font-size:11px;letter-spacing:.25em;color:var(--muted);text-transform:uppercase;position:relative;z-index:1;}
+
+/* S3M DEMO INTRO */
+#s3m{ text-align:center; }
+#s3m .demo-intro-wrap{
+  max-width:1100px;width:100%;
+  display:flex;flex-direction:column;align-items:center;gap:22px;
+}
+#s3m .demo-feat-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:18px;
+  width:100%;margin-top:16px;
+}
+.demo-feat{
+  background:var(--white);border:1.5px solid var(--border);
+  border-radius:14px;padding:24px 20px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  text-align:center;
+  box-shadow:0 3px 14px var(--shadow);
+  transition:border-color .25s,transform .25s;
+}
+.demo-feat:hover{ border-color:var(--terra-l);transform:translateY(-3px); }
+.demo-feat-icon{ font-size:36px;line-height:1; }
+.demo-feat-num{
+  font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;
+  color:var(--terra);letter-spacing:.1em;
+}
+.demo-feat-name{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:clamp(14px,1.8vw,18px);font-weight:700;
+  color:var(--ink);line-height:1.5;
+}
+.demo-feat-desc{
+  font-size:clamp(12px,1.3vw,14px);
+  color:var(--muted);line-height:1.7;
+}
+@media(max-width:700px){ #s3m .demo-feat-grid{ grid-template-columns:1fr 1fr; } }
+
+/* USE CASES S3-S8 */
+.ucw{display:grid;grid-template-columns:1fr 1.1fr;gap:48px;align-items:center;width:100%;max-width:1200px;}
+.ucl .bignum{font-family:'Cormorant Garamond',serif;font-size:clamp(64px,10vw,120px);font-weight:300;color:var(--terra-l);line-height:1;margin-bottom:-4px;}
+.ucl .icon{font-size:42px;margin-bottom:10px;}
+.ucl h2{font-family:'Shippori Mincho B1',serif;font-size:clamp(28px,4vw,48px);font-weight:800;line-height:1.3;margin-bottom:16px;}
+.ucl p{font-size:clamp(14px,1.6vw,17px);color:var(--muted);line-height:2.1;}
+.uccard{background:var(--white);border-radius:16px;box-shadow:0 4px 24px var(--shadow);overflow:hidden;border:1px solid var(--border);}
+.uccard-h{padding:13px 22px;font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--terra);border-bottom:1px solid var(--border);background:var(--bg);}
+.uclist{list-style:none;padding:4px 0;}
+.uclist li{padding:13px 22px;font-size:clamp(11px,1.3vw,13px);color:var(--ink);border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;line-height:1.7;transition:background .15s;}
+.uclist li:last-child{border-bottom:none;}
+.uclist li:hover{background:var(--bg);}
+.uclist li::before{content:'→';color:var(--terra);font-size:10px;flex-shrink:0;margin-top:3px;}
+
+/* CHAT WINDOW */
+.cwin{background:var(--white);border-radius:14px;border:1px solid var(--border);box-shadow:0 6px 28px var(--shadow);overflow:hidden;}
+.cbar{background:var(--bg);padding:11px 16px;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--border);}
+.cd{width:9px;height:9px;border-radius:50%;}
+.cd.r{background:#ff5f57;}.cd.y{background:#ffbd2e;}.cd.g{background:#28c840;}
+.cbar span{margin-left:6px;font-size:11px;color:var(--muted);}
+.cmsgs{padding:20px 22px;display:flex;flex-direction:column;gap:14px;max-height:220px;overflow-y:auto;scroll-behavior:smooth;}
+.bb{max-width:70%;padding:12px 16px;border-radius:12px;font-size:clamp(11px,1.3vw,13px);line-height:1.9;}
+.bb.u{background:var(--terra);color:#fff;align-self:flex-end;border-bottom-right-radius:3px;}
+.bb.a{background:var(--bg);border:1px solid var(--border);color:var(--ink);align-self:flex-start;border-bottom-left-radius:3px;}
+.bb .who{font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px;}
+.bb.u .who{color:rgba(255,255,255,.6);text-align:right;}
+.bb.a .who{color:var(--terra);}
+.bb.a ul{margin-top:6px;list-style:none;}
+.bb.a li{padding:2px 0 2px 13px;position:relative;color:var(--muted);font-size:12px;}
+.bb.a li::before{content:'•';color:var(--terra);position:absolute;left:0;}
+
+/* S10 BEFORE/AFTER */
+#s10{align-items:flex-start;padding-top:86px;}
+#s10 .inn{width:100%;max-width:1000px;margin:0 auto;}
+#s10 h2{font-family:'Shippori Mincho B1',serif;font-size:clamp(20px,2.9vw,34px);font-weight:800;text-align:center;margin-bottom:32px;}
+.baw{display:grid;grid-template-columns:1fr 52px 1fr;}
+.bac h3{font-size:10px;font-weight:700;letter-spacing:.25em;text-transform:uppercase;padding:11px 22px;border-bottom:1px solid var(--border);}
+.bac.bf{background:var(--bg);border:1px solid var(--border);border-radius:12px 0 0 12px;}
+.bac.af{background:var(--white);border:1px solid var(--border);border-left:none;border-radius:0 12px 12px 0;box-shadow:0 4px 20px var(--shadow);}
+.bac.bf h3{color:var(--muted);}
+.bac.af h3{color:var(--terra);}
+.bam{display:flex;align-items:flex-start;justify-content:center;padding-top:14px;}
+.barr{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--terra-l);background:var(--white);display:flex;align-items:center;justify-content:center;color:var(--terra);font-size:13px;box-shadow:0 2px 8px var(--shadow);}
+.bar{padding:12px 22px;font-size:clamp(11px,1.3vw,13px);border-bottom:1px solid var(--border);line-height:1.75;}
+.bar:last-child{border-bottom:none;}
+.bac.bf .bar{color:var(--muted);}
+.bac.af .bar{color:var(--ink);}
+
+/* S11 START */
+#s11{text-align:center;}
+#s11 h2{font-family:'Shippori Mincho B1',serif;font-size:clamp(26px,4vw,48px);font-weight:800;margin-bottom:13px;}
+#s11 .sub{font-size:clamp(12px,1.4vw,15px);color:var(--muted);margin-bottom:44px;line-height:2;}
+.srow{display:flex;justify-content:center;position:relative;margin-bottom:44px;}
+.srow::before{content:'';position:absolute;top:23px;left:calc(50% - 176px);width:352px;height:1.5px;background:var(--terra-l);}
+.sstep{display:flex;flex-direction:column;align-items:center;gap:11px;width:176px;}
+.snum{width:46px;height:46px;border-radius:50%;border:2px solid var(--terra-l);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:21px;color:var(--terra);background:var(--white);position:relative;z-index:1;box-shadow:0 2px 10px var(--shadow);}
+.slbl{font-size:12px;color:var(--muted);line-height:1.7;text-align:center;}
+.slbl strong{display:block;color:var(--ink);font-size:13px;margin-bottom:1px;}
+.cta{display:inline-flex;align-items:center;gap:10px;background:var(--terra);color:#fff;padding:15px 40px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;border-radius:8px;transition:all .3s;box-shadow:0 4px 18px rgba(201,95,42,.25);}
+.cta:hover{background:var(--terra-d);transform:translateY(-2px);box-shadow:0 8px 28px rgba(201,95,42,.3);}
+
+/* S9 END */
+#s9{text-align:center;}
+#s9 .big{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;font-size:clamp(40px,7vw,80px);color:var(--terra);line-height:1.2;margin-bottom:36px;}
+#s9 p{font-size:clamp(15px,1.8vw,22px);color:var(--muted);line-height:2.5;max-width:600px;}
+.end-links{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;max-width:820px;}
+.end-link-card{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:var(--white);border:1.5px solid var(--border);border-radius:14px;
+  padding:20px 24px;min-width:210px;flex:1;
+  text-decoration:none;color:var(--ink);
+  box-shadow:0 3px 14px var(--shadow);
+  transition:all .25s;
+}
+.end-link-card:hover{border-color:var(--terra);transform:translateY(-3px);box-shadow:0 8px 28px rgba(201,95,42,.15);}
+.end-link-icon{font-size:28px;line-height:1;}
+.end-link-title{font-family:'Shippori Mincho B1',serif;font-size:clamp(13px,1.4vw,16px);font-weight:700;text-align:center;line-height:1.5;}
+.end-link-desc{font-size:clamp(10px,1.1vw,12px);color:var(--muted);text-align:center;line-height:1.6;}
+
+/* ── HOVER TEXT HIGHLIGHT (all slides) ── */
+
+/* .hline = JS が br・改行ごとに生成する1行ラッパー */
+.hline {
+  display: block;
+  transition: transform .6s cubic-bezier(.22,1,.36,1),
+              color .5s ease,
+              text-shadow .5s ease,
+              letter-spacing .5s ease;
+  transform-origin: left center;
+  cursor: default;
+  will-change: transform;
+}
+
+/* 中央揃えスライドは中央起点 */
+#s1 .hline, #s2 .hline, #s3m .hline, #s11 .hline, #s9 .hline { transform-origin: center center; }
+
+.hline:hover {
+  transform: scale(1.22);
+  color: var(--terra);
+  text-shadow: 0 3px 22px rgba(201,95,42,.2);
+}
+
+/* ── 要素ごとに上書き ── */
+.slide .pill,
+.slide .eyebrow,
+.slide .icon,
+.slide .bignum,
+.slide .attr {
+  display: inline-block;
+  transition: transform .6s cubic-bezier(.22,1,.36,1),
+              color .5s ease,
+              background .5s ease,
+              letter-spacing .5s ease;
+  cursor: default;
+}
+.slide .pill:hover    { transform: scale(1.20); background: var(--terra); color: #fff; }
+.slide .eyebrow:hover { transform: scale(1.18); letter-spacing: .5em; }
+.slide .icon:hover    { transform: scale(1.45); }
+.slide .bignum:hover  { transform: scale(1.20); color: rgba(201,95,42,.32); }
+.slide .attr:hover    { transform: scale(1.15); color: var(--terra); }
+
+/* リスト・行 */
+.uclist li {
+  transition: transform .5s cubic-bezier(.22,1,.36,1), color .4s ease, padding-left .4s ease, font-weight .3s ease;
+  overflow: hidden;
+  transform-origin: left center;
+}
+.uclist li:hover {
+  transform: scale(1.18);
+  color: var(--terra) !important;
+  font-weight: 700;
+}
+.uclist li:hover::before {
+  color: var(--terra) !important;
+}
+/* Orange-bg hover for specific demo rows */
+.uclist li.orange-hover:hover {
+  background: var(--terra) !important;
+  color: #fff !important;
+  transform: scale(1.18);
+  border-radius: 4px;
+}
+.uclist li.orange-hover:hover::before {
+  color: #fff !important;
+}
+.bb {
+  transition: transform .6s cubic-bezier(.22,1,.36,1);
+}
+.bb:hover { transform: scale(1.08); }
+
+.bar {
+  transition: transform .6s cubic-bezier(.22,1,.36,1), color .5s ease;
+}
+.bar:hover { transform: scale(1.10) translateX(6px); color: var(--terra-d) !important; }
+
+.slbl {
+  display: inline-block;
+  transition: transform .6s cubic-bezier(.22,1,.36,1), color .5s ease;
+}
+.slbl:hover { transform: scale(1.18); color: var(--ink) !important; }
+
+#s9 .big {
+  display: inline-block;
+  transition: transform .6s cubic-bezier(.22,1,.36,1), text-shadow .5s ease;
+}
+#s9 .big:hover { transform: scale(1.18); text-shadow: 0 6px 40px rgba(201,95,42,.28); }
+
+
+/* ── ① SPOTLIGHT ── */
+#spotlight{
+  position:fixed;inset:0;z-index:450;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .5s ease;
+  background:radial-gradient(circle 220px at 50% 50%,
+    transparent 0%,
+    transparent 38%,
+    rgba(37,26,17,.72) 70%,
+    rgba(37,26,17,.88) 100%);
+}
+#spotlight.on{ opacity:1; pointer-events:none; }
+#spotlight-badge{
+  position:fixed;bottom:78px;left:50%;transform:translateX(-50%);
+  z-index:600;
+  background:var(--terra);color:#fff;
+  font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  padding:5px 16px;border-radius:20px;
+  opacity:0;transition:opacity .4s;pointer-events:none;
+}
+#spotlight-badge.on{ opacity:1; }
+
+/* ── ② LIVE TYPING ── */
+.typing-cursor{
+  display:inline-block;width:2px;height:1.1em;
+  background:var(--terra);vertical-align:text-bottom;
+  animation:blink .75s step-end infinite;
+  margin-left:1px;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── ③ COUNT-UP ── */
+.countup{
+  font-family:'Cormorant Garamond',serif;
+  font-style:italic;color:var(--terra);
+  display:inline-block;min-width:.8em;text-align:center;
+}
+
+/* ── ③ BEFORE/AFTER SLIDER ── */
+.ba-slider-wrap{
+  position:relative;
+  width:100%;max-width:900px;
+  border-radius:14px;overflow:hidden;
+  box-shadow:0 6px 32px var(--shadow);
+  border:1px solid var(--border);
+  user-select:none;
+  cursor:ew-resize;
+}
+.ba-layer{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+}
+/* After is always behind */
+.ba-after{ position:relative; background:var(--white); }
+/* Before clips over the top */
+.ba-before{
+  background:var(--bg);
+  clip-path:inset(0 50% 0 0); /* starts at 50% */
+}
+.ba-col-head{
+  padding:13px 24px;
+  font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
+  border-bottom:1px solid var(--border);
+}
+.before-head{ color:var(--muted);background:rgba(250,247,243,.95); }
+.after-head { color:var(--terra);background:rgba(255,252,249,.95); }
+.ba-layer .ba-row{
+  padding:13px 24px;
+  font-size:clamp(11px,1.3vw,13.5px);
+  border-bottom:1px solid var(--border);
+  line-height:1.75;
+}
+.ba-layer .ba-row:last-child{ border-bottom:none; }
+.ba-before .ba-row{ color:var(--muted); }
+.ba-after  .ba-row{ color:var(--ink); }
+
+/* Divider handle */
+.ba-handle{
+  position:absolute;top:0;bottom:0;
+  left:50%;transform:translateX(-50%);
+  width:44px;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  z-index:10;cursor:ew-resize;
+}
+.ba-handle-line{
+  position:absolute;top:0;bottom:0;
+  left:50%;transform:translateX(-50%);
+  width:2px;background:var(--terra);opacity:.8;
+}
+.ba-handle-btn{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--terra);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;
+  box-shadow:0 2px 12px rgba(201,95,42,.35);
+  border:2px solid #fff;
+  position:relative;z-index:11;
+  transition:transform .2s;
+}
+.ba-handle:hover .ba-handle-btn{ transform:scale(1.12); }
+.ba-hint{
+  text-align:center;font-size:11px;color:var(--muted);
+  letter-spacing:.12em;margin-top:10px;
+  animation:fadeHint 3s ease 1s forwards;
+  opacity:0;
+}
+@keyframes fadeHint{0%{opacity:0}20%{opacity:1}80%{opacity:1}100%{opacity:0}}
+
+/* ── S2 WHY NOW ── */
+.whynow-wrap{
+  width:100%;max-width:1060px;
+  display:flex;flex-direction:column;gap:24px;
+}
+.whynow-header{ }
+.whynow-header h2{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:clamp(22px,3.2vw,38px);font-weight:800;
+  line-height:1.3;margin-top:10px;
+}
+.whynow-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.wy-card{
+  background:var(--white);border:1.5px solid var(--border);
+  border-radius:14px;padding:24px 26px;
+  display:flex;flex-direction:column;gap:8px;
+  box-shadow:0 3px 14px var(--shadow);
+  transition:border-color .35s,transform .5s cubic-bezier(.22,1,.36,1),box-shadow .35s;
+  cursor:pointer;
+  overflow:hidden;
+}
+.wy-card:hover{
+  border-color:var(--terra-l);
+  transform:scale(1.15);
+  box-shadow:0 12px 40px rgba(37,26,17,.18);
+  z-index:2;
+}
+.wy-card-accent{
+  border-color:var(--terra-l);
+  background:rgba(242,212,192,.12);
+  transition:border-color .35s,transform .5s cubic-bezier(.22,1,.36,1),box-shadow .35s,background .3s;
+}
+.wy-card-accent:hover{
+  background:var(--white);
+}
+.wy-icon{ font-size:22px;line-height:1; }
+.wy-title{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:clamp(12px,1.4vw,14px);font-weight:700;
+  color:var(--ink);line-height:1.5;
+}
+.wy-card-accent .wy-title{ color:var(--terra-d); }
+.wy-body{
+  font-size:clamp(11px,1.2vw,13px);
+  color:var(--muted);line-height:1.85;
+}
+.wy-body strong{ color:var(--ink);font-weight:700; }
+.wy-card-accent .wy-body strong{ color:var(--terra-d); }
+
+.wy-conclusion{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:clamp(14px,1.8vw,18px);font-weight:800;
+  text-align:center;
+  color:var(--terra-d);
+  background:rgba(242,212,192,.22);
+  border:2px solid var(--terra-l);
+  border-radius:14px;
+  padding:20px 32px;
+  line-height:1.8;
+  cursor:pointer;
+  transition:all .5s cubic-bezier(.22,1,.36,1);
+}
+.wy-conclusion:hover{
+  border-color:var(--terra);
+  transform:scale(1.25);
+  box-shadow:0 16px 56px rgba(201,95,42,.28);
+  background:var(--terra);
+  color:#fff;
+  letter-spacing:.06em;
+}
+
+/* Suppress text scale inside wy-cards to prevent overflow */
+.wy-card .hline:hover,
+.wy-conclusion .hline:hover {
+  transform:none;
+  color:inherit;
+  text-shadow:none;
+}
+
+/* ── CARD MODAL ── */
+#card-modal{
+  position:fixed;inset:0;z-index:800;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(37,26,17,.55);
+  backdrop-filter:blur(8px);
+  opacity:0;pointer-events:none;
+  transition:opacity .35s ease;
+  padding:40px;
+}
+#card-modal.on{ opacity:1;pointer-events:all; }
+#card-modal-card{
+  background:var(--white);
+  border:2px solid var(--terra-l);
+  border-radius:24px;
+  padding:56px 64px;
+  max-width:720px;width:100%;
+  display:flex;flex-direction:column;gap:20px;
+  box-shadow:0 20px 80px rgba(37,26,17,.22);
+  transform:scale(.92) translateY(20px);
+  transition:transform .4s cubic-bezier(.22,1,.36,1);
+  position:relative;
+}
+#card-modal.on #card-modal-card{ transform:scale(1) translateY(0); }
+#card-modal-close{
+  position:absolute;top:18px;right:22px;
+  width:40px;height:40px;border-radius:50%;
+  border:1.5px solid var(--border);background:var(--bg);
+  color:var(--muted);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+#card-modal-close:hover{ background:var(--terra);color:#fff;border-color:var(--terra); }
+#card-modal-icon{ font-size:48px;line-height:1; }
+#card-modal-title{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:clamp(22px,3.5vw,32px);font-weight:800;
+  color:var(--ink);line-height:1.4;
+}
+#card-modal-body{
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:clamp(15px,2vw,19px);font-weight:400;
+  color:var(--ink);line-height:2.2;
+  opacity:.85;
+}
+#card-modal-body strong{ color:var(--terra-d);font-weight:700; }
+#card-modal-nav{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:8px;
+}
+.cm-nav-btn{
+  width:38px;height:38px;border-radius:50%;
+  border:1.5px solid var(--border);background:var(--white);
+  color:var(--terra);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;box-shadow:0 2px 8px var(--shadow);
+}
+.cm-nav-btn:hover:not(:disabled){ background:var(--terra);color:#fff;border-color:var(--terra); }
+.cm-nav-btn:disabled{ opacity:.2;cursor:default; }
+#card-modal-counter{
+  font-size:12px;letter-spacing:.2em;color:var(--muted);
+}
+/* accent variant */
+#card-modal-card.modal-accent{
+  border-color:var(--terra);
+  background:rgba(255,252,249,1);
+}
+#card-modal-card.modal-accent #card-modal-title{ color:var(--terra-d); }
+
+/* ── S2 課題提起スライド（旧・残存CSSは流用） ── */
+.problem-slide{
+  display:grid;grid-template-columns:1fr 1.1fr;
+  gap:64px;align-items:center;
+  width:100%;max-width:1060px;
+}
+.prob-left .eyebrow{ margin-bottom:16px; }
+.prob-left h2{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:clamp(24px,3.5vw,44px);font-weight:800;
+  line-height:1.25;margin-bottom:22px;
+}
+.prob-it{ font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;color:var(--terra); }
+.prob-body{
+  font-size:clamp(13px,1.4vw,15px);color:var(--muted);
+  line-height:2.1;
+}
+.prob-body strong{ color:var(--ink);font-weight:700; }
+
+/* 右カラム */
+.prob-right{ display:flex;flex-direction:column;gap:12px; }
+.prob-card{
+  background:var(--white);border:1.5px solid var(--border);
+  border-radius:12px;padding:16px 20px;
+  box-shadow:0 4px 16px var(--shadow);
+}
+.prob-card-label{
+  font-size:10px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;margin-bottom:12px;
+}
+.prob-label-bad{ color:var(--muted); }
+.prob-label-good{ color:var(--terra); }
+
+/* Before: だんだん詰まった文字行 */
+.prob-lines{ display:flex;flex-direction:column;gap:5px; }
+.prob-line{
+  height:7px;border-radius:4px;
+  background:rgba(154,138,124,.18);
+}
+.prob-line.full { width:100%; }
+.prob-line.long { width:88%; }
+.prob-line.med  { width:68%; }
+.prob-line.short{ width:44%; }
+
+/* After: 番号付きブロック */
+.prob-blocks{ display:flex;flex-direction:column;gap:8px; }
+.prob-block{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 10px;border-radius:8px;
+  background:rgba(250,247,243,.7);
+  border:1px solid var(--border);
+}
+.prob-block.accent-block{
+  background:rgba(242,212,192,.35);
+  border-color:var(--terra-l);
+}
+.pb-num{
+  font-family:'Cormorant Garamond',serif;
+  font-size:16px;font-weight:600;color:var(--terra);
+  flex-shrink:0;width:16px;text-align:center;
+}
+.pb-line{
+  height:7px;border-radius:4px;
+  background:rgba(201,95,42,.22);
+  display:block;
+}
+.pb-line.short-l{ width:48%; }
+.pb-line.med-l  { width:66%; }
+.pb-line.long-l { width:85%; }
+.accent-block .pb-line{ background:var(--terra);opacity:.55; }
+
+/* 矢印テキスト */
+.prob-arrow{
+  text-align:center;font-size:11px;font-weight:700;
+  letter-spacing:.12em;color:var(--terra);
+  padding:4px 0;
+}
+
+@media(max-width:700px){
+  .problem-slide{ grid-template-columns:1fr;gap:28px; }
+}
+.anim-card-wrap{ padding:0; }
+.anim-card-wrap .uccard-h{ padding:13px 22px; }
+.anim-card-wrap .anim-card{
+  background:transparent;border:none;border-radius:0;
+  box-shadow:none;padding:10px 22px;gap:6px;
+}
+.anim-card-wrap .anim-card:hover{ border-color:transparent; }
+
+/* ── S6 縦線ドラッグ型 Before/After スライダー ── */
+.ba-toggle-card{ padding:0; }
+.ba-toggle-card .uccard-h{ padding:13px 22px; }
+.ba-rows{ display:flex;flex-direction:column; }
+
+.ba-comp-row{
+  position:relative;
+  border-bottom:1px solid var(--border);
+  min-height:80px;
+  overflow:hidden;
+  cursor:ew-resize;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.ba-comp-row:last-child{ border-bottom:none; }
+
+.ba-comp-layer{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  display:flex;align-items:center;
+  padding:18px 28px;
+  font-size:clamp(14px,1.8vw,18px);
+  line-height:1.7;
+  white-space:nowrap;
+  overflow:hidden;
+}
+.ba-comp-before{
+  background:var(--bg);
+  color:var(--muted);
+  clip-path:inset(0 0% 0 0);
+  z-index:2;
+}
+.ba-comp-after{
+  background:var(--white);
+  color:var(--terra-d);
+  font-weight:500;
+  z-index:1;
+}
+
+/* 縦線ハンドル */
+.ba-comp-handle{
+  position:absolute;top:0;bottom:0;
+  left:100%;transform:translateX(-50%);
+  width:32px;z-index:5;
+  display:flex;align-items:center;justify-content:center;
+  cursor:ew-resize;
+}
+.ba-comp-line{
+  position:absolute;top:0;bottom:0;
+  left:50%;transform:translateX(-50%);
+  width:2px;background:var(--terra);opacity:.7;
+}
+.ba-comp-knob{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--terra);border:2px solid #fff;
+  box-shadow:0 2px 8px rgba(201,95,42,.35);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:12px;
+  position:relative;z-index:6;
+  transition:transform .15s;
+}
+.ba-comp-handle:hover .ba-comp-knob{ transform:scale(1.15); }
+
+/* ラベル */
+.ba-comp-label{
+  position:absolute;top:6px;
+  font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  z-index:3;pointer-events:none;
+}
+.ba-comp-label-b{ left:8px;color:var(--muted);transition:opacity .2s; }
+.ba-comp-label-a{ right:8px;color:var(--terra);transition:opacity .2s;opacity:0; }
+
+.ba-toggle-reset-wrap{
+  padding:12px 22px;
+  border-top:1px solid var(--border);
+  display:flex;justify-content:flex-end;
+}
+.ba-reset-btn{
+  background:transparent;border:1.5px solid var(--border);
+  color:var(--muted);font-size:11px;letter-spacing:.08em;
+  padding:5px 14px;border-radius:20px;cursor:pointer;
+  transition:all .2s;
+}
+.ba-reset-btn:hover{ border-color:var(--terra);color:var(--terra); }
+.anim-card{
+  background:var(--white);border:1.5px solid var(--border);
+  border-radius:16px;padding:20px 22px;
+  box-shadow:0 4px 20px var(--shadow);
+  display:flex;flex-direction:column;gap:10px;
+  transition:border-color .3s;
+  overflow:hidden; /* ホバー拡大がカード外にはみ出さないよう */
+}
+.anim-card:hover{ border-color:var(--terra-l); }
+.anim-card-head{
+  display:flex;align-items:center;gap:10px;
+}
+.anim-num{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--terra);color:#fff;
+  font-size:13px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.anim-label{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:14px;font-weight:700;flex:1;
+}
+.anim-trigger{
+  background:var(--terra);color:#fff;
+  border:none;border-radius:8px;
+  padding:7px 16px;font-size:11px;font-weight:700;
+  letter-spacing:.08em;cursor:pointer;
+  transition:all .2s;white-space:nowrap;flex-shrink:0;
+}
+.anim-trigger:hover{ background:var(--terra-d);transform:scale(1.05); }
+.anim-trigger.playing{
+  background:var(--sage);
+}
+.anim-card-desc{
+  font-size:12px;color:var(--muted);line-height:1.8;
+}
+/* カウントアップ表示エリア */
+.count-demo-box{
+  background:var(--bg);border-radius:12px;
+  padding:14px;text-align:center;
+  border:1px solid var(--border);margin-top:4px;
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:4px;
+}
+.count-demo-label{
+  font-size:11px;color:var(--muted);letter-spacing:.1em;
+}
+.count-demo-num{
+  display:flex;align-items:baseline;gap:4px;
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(36px,5vw,60px);
+  font-weight:300;color:var(--terra);line-height:1;
+}
+.count-unit{
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:clamp(20px,3vw,36px);
+  color:var(--terra);font-weight:700;
+}
+@media(max-width:700px){
+  .anim-demos{grid-template-columns:1fr;}
+}
+
+/* ── S5 SLIDE OVERVIEW ── */
+#overview-btn{
+  position:fixed;top:16px;right:60px;z-index:500;
+  width:36px;height:36px;border-radius:8px;
+  border:1.5px solid var(--border);background:var(--white);
+  color:var(--terra);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px var(--shadow);
+  transition:all .2s;font-size:15px;
+}
+#overview-btn:hover{background:var(--terra);color:#fff;border-color:var(--terra);}
+
+#overview{
+  position:fixed;inset:0;z-index:600;
+  background:rgba(250,247,243,.96);
+  backdrop-filter:blur(8px);
+  display:flex;flex-direction:column;
+  align-items:center;
+  padding:72px 40px 48px;
+  opacity:0;pointer-events:none;
+  transition:opacity .35s ease;
+  overflow-y:auto;
+}
+#overview.on{opacity:1;pointer-events:all;}
+
+#overview-close{
+  position:fixed;top:20px;right:28px;z-index:700;
+  width:38px;height:38px;border-radius:50%;
+  border:1.5px solid var(--border);background:var(--white);
+  color:var(--muted);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px var(--shadow);
+  transition:all .2s;
+  opacity:0;pointer-events:none;
+}
+#overview.on ~ #overview-close,
+#overview-close.on{opacity:1;pointer-events:all;}
+
+#overview-title{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:13px;font-weight:700;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--muted);
+  margin-bottom:28px;flex-shrink:0;
+}
+
+.ov-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  width:100%;max-width:980px;
+}
+
+.ov-card{
+  background:var(--white);
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  padding:18px 16px 14px;
+  cursor:pointer;
+  transition:border-color .2s,box-shadow .2s,transform .2s;
+  display:flex;flex-direction:column;gap:7px;
+}
+.ov-card:hover{
+  border-color:var(--terra);
+  box-shadow:0 4px 20px rgba(201,95,42,.14);
+  transform:translateY(-3px);
+}
+.ov-card.ov-cur{
+  border-color:var(--terra);
+  background:rgba(242,212,192,.18);
+}
+.ov-num{
+  font-family:'Cormorant Garamond',serif;
+  font-size:20px;font-weight:300;
+  color:var(--terra-l);line-height:1;
+}
+.ov-card.ov-cur .ov-num{color:var(--terra);}
+.ov-icon{font-size:18px;line-height:1;}
+.ov-title{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:12px;font-weight:700;
+  color:var(--ink);line-height:1.5;
+}
+.ov-desc{font-size:10px;color:var(--muted);line-height:1.6;}
+
+/* ── FEEDBACK MEMO ── */
+#memo-btn{
+  position:fixed;top:16px;right:20px;z-index:550;
+  width:36px;height:36px;border-radius:8px;
+  border:1.5px solid var(--border);background:var(--white);
+  color:var(--terra);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px var(--shadow);
+  transition:all .2s;font-size:16px;
+}
+#memo-btn:hover{background:var(--terra);color:#fff;border-color:var(--terra);}
+#memo-btn.has-notes{border-color:var(--terra);color:var(--terra);}
+
+@media(max-width:700px){
+  .ucw{grid-template-columns:1fr;gap:22px;}
+  .ucl .bignum{font-size:64px;}
+  .baw{grid-template-columns:1fr;}
+  .bam{display:none;}
+  .bac.bf{border-radius:12px 12px 0 0;}
+  .bac.af{border-left:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;}
+  .srow{flex-direction:column;align-items:center;gap:20px;}
+  .srow::before{display:none;}
+  .slide{padding:72px 22px 90px;}
+  #nav{padding:0 20px;}
+  #lang-toggle{right:74px;font-size:9px;height:28px;}
+  #lang-toggle span{padding:4px 8px;}
+  #overview-btn{right:42px;width:28px;height:28px;font-size:13px;}
+  #memo-btn{right:10px;width:28px;height:28px;font-size:13px;}
+}
+
+#memo-panel{
+  position:fixed;top:0;right:-420px;
+  width:400px;height:100vh;z-index:650;
+  background:var(--white);
+  border-left:2px solid var(--border);
+  box-shadow:-6px 0 32px rgba(37,26,17,.12);
+  display:flex;flex-direction:column;
+  transition:right .35s cubic-bezier(.22,1,.36,1);
+}
+#memo-panel.open{right:0;}
+@media(min-width:701px){ .memo-shift .slide{right:400px;} }
+
+#memo-header{
+  padding:18px 22px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+#memo-header-title{
+  font-family:'Shippori Mincho B1',serif;
+  font-size:14px;font-weight:700;color:var(--ink);
+  display:flex;align-items:center;gap:8px;
+}
+#memo-close{
+  width:32px;height:32px;border-radius:50%;
+  border:1.5px solid var(--border);background:var(--bg);
+  color:var(--muted);font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+#memo-close:hover{background:var(--terra);color:#fff;border-color:var(--terra);}
+
+#memo-input-area{
+  padding:14px 22px;
+  border-bottom:1px solid var(--border);
+  display:flex;flex-direction:column;gap:8px;
+  flex-shrink:0;
+}
+#memo-slide-tag{
+  font-size:10px;font-weight:700;letter-spacing:.15em;
+  color:var(--terra);text-transform:uppercase;
+}
+#memo-input{
+  width:100%;min-height:60px;max-height:120px;
+  border:1.5px solid var(--border);border-radius:10px;
+  padding:10px 14px;font-family:'Noto Sans JP',sans-serif;
+  font-size:13px;color:var(--ink);line-height:1.7;
+  resize:vertical;background:var(--bg);
+  transition:border-color .2s;
+}
+#memo-input:focus{outline:none;border-color:var(--terra);}
+#memo-input::placeholder{color:var(--muted);font-size:12px;}
+
+#memo-add-btn{
+  align-self:flex-end;
+  background:var(--terra);color:#fff;
+  border:none;border-radius:8px;
+  padding:7px 18px;font-size:11px;font-weight:700;
+  letter-spacing:.08em;cursor:pointer;
+  transition:all .2s;
+}
+#memo-add-btn:hover{background:var(--terra-d);transform:scale(1.05);}
+
+#memo-list{
+  flex:1;overflow-y:auto;padding:10px 22px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.memo-item{
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:10px;padding:12px 14px;
+  display:flex;flex-direction:column;gap:4px;
+  position:relative;
+  animation:memoIn .3s ease;
+}
+@keyframes memoIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.memo-item-head{
+  display:flex;align-items:center;justify-content:space-between;
+}
+.memo-item-slide{
+  font-size:10px;font-weight:700;letter-spacing:.12em;
+  color:var(--terra);
+}
+.memo-item-time{
+  font-size:9px;color:var(--muted);letter-spacing:.05em;
+}
+.memo-item-text{
+  font-size:12px;color:var(--ink);line-height:1.75;
+  white-space:pre-wrap;word-break:break-word;
+}
+.memo-item-del{
+  position:absolute;top:8px;right:10px;
+  width:20px;height:20px;border-radius:50%;
+  border:none;background:transparent;
+  color:var(--muted);font-size:12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:all .2s;
+}
+.memo-item:hover .memo-item-del{opacity:1;}
+.memo-item-del:hover{background:var(--terra);color:#fff;}
+
+#memo-footer{
+  padding:14px 22px;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+#memo-count{
+  font-size:10px;color:var(--muted);letter-spacing:.08em;
+}
+#memo-download{
+  background:transparent;
+  border:1.5px solid var(--border);
+  color:var(--muted);font-size:11px;font-weight:700;
+  letter-spacing:.08em;
+  padding:6px 16px;border-radius:8px;cursor:pointer;
+  transition:all .2s;display:flex;align-items:center;gap:6px;
+}
+#memo-download:hover{border-color:var(--terra);color:var(--terra);}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- CARD MODAL -->
+<div id="card-modal">
+  <div id="card-modal-card">
+    <button id="card-modal-close">✕</button>
+    <div id="card-modal-icon"></div>
+    <div id="card-modal-title"></div>
+    <div id="card-modal-body"></div>
+    <div id="card-modal-nav">
+      <button class="cm-nav-btn" id="cm-prev" onclick="cmMove(-1)">←</button>
+      <span id="card-modal-counter"></span>
+      <button class="cm-nav-btn" id="cm-next" onclick="cmMove(1)">→</button>
+    </div>
+  </div>
+</div>
+
+<div id="spotlight"></div>
+<div id="spotlight-badge" data-i18n="ui.spotBadge">🔦 スポットライト ON — S キーで解除</div>
+<button id="overview-btn" title="スライド一覧">⊞</button>
+<button id="memo-btn" title="フィードバックメモ" onclick="toggleMemo()">📝</button>
+<div id="memo-panel">
+  <div id="memo-header">
+    <div id="memo-header-title">📝 フィードバックメモ</div>
+    <button id="memo-close" onclick="toggleMemo()">✕</button>
+  </div>
+  <div id="memo-input-area">
+    <div id="memo-slide-tag">Slide 1 / 8</div>
+    <textarea id="memo-input" placeholder="フィードバックを入力… (Ctrl+Enter で追加)"></textarea>
+    <button id="memo-add-btn" onclick="addMemo()">＋ 追加</button>
+  </div>
+  <div id="memo-list"></div>
+  <div id="memo-footer">
+    <span id="memo-count">0 件</span>
+    <button id="memo-download" onclick="downloadMemo()">⬇ ダウンロード</button>
+  </div>
+</div>
+<div id="overview">
+  <div id="overview-title" data-i18n="ui.ovTitle">スライド一覧</div>
+  <div class="ov-grid" id="ov-grid"></div>
+</div>
+<button id="overview-close" title="閉じる">✕</button>
+<div id="prog"><div id="pbar" style="width:0%"></div></div>
+<div class="top-logo" data-i18n="ui.logo" onclick="goTo(0)">GitHub Copilotでプレゼンが変わる、世界が変わる。</div>
+<div id="lang-toggle" onclick="toggleLang()">
+  <span id="lang-ja" class="active">日本語</span>
+  <span id="lang-en">English</span>
+</div>
+<div id="hint" data-i18n="ui.hint">← → キーまたはボタンで移動</div>
+
+<div id="stage">
+
+  <!-- S1: TITLE -->
+  <div class="slide active" id="s1">
+    <div class="pill" data-i18n="s1.pill">GitHub Copilot × プレゼン</div>
+    <h1 data-i18n="s1.h1">GitHub Copilotで<br>プレゼンが変わる、<span class="it">世界が変わる。</span></h1>
+    <p data-i18n="s1.p">資料を作るだけじゃない。<br>伝える場面そのものが、進化する。<br>このスライド自体が、その証明です。</p>
+  </div>
+
+  <!-- S2: 課題提起 WHY NOW -->
+  <div class="slide" id="s2">
+    <div class="whynow-wrap">
+      <div class="whynow-header">
+        <div class="eyebrow" data-i18n="s2.eyebrow">Problem</div>
+        <h2 data-i18n="s2.h2">プレゼン資料の多くは、<br><span class="it prob-it">紙芝居</span>のままだ。</h2>
+      </div>
+      <div class="whynow-grid">
+
+        <div class="wy-card">
+          <div class="wy-icon">📜</div>
+          <div class="wy-title" data-i18n="s2.c1.title">せっかくのデジタルなのに、「めくるだけ」</div>
+          <div class="wy-body" data-i18n="s2.c1.body">デジタルになったのに、<br>やることは紙芝居と同じ。<br>テキストを並べて、順番にめくる。<br><strong>デジタルの自由度をまったく活かせていない</strong>。</div>
+        </div>
+
+        <div class="wy-card">
+          <div class="wy-icon">🔄</div>
+          <div class="wy-title" data-i18n="s2.c2.title">インタラクションがあれば、聴衆は離れない</div>
+          <div class="wy-body" data-i18n="s2.c2.body">一方通行の発表では集中力が続かない。<br>触れる・動く・反応する。<br><strong>インタラクティブな体験</strong>が、<br>聴衆の没入を生む。</div>
+        </div>
+
+        <div class="wy-card">
+          <div class="wy-icon">🏗️</div>
+          <div class="wy-title" data-i18n="s2.c3.title">構造的に管理できれば、再利用も自由自在</div>
+          <div class="wy-body" data-i18n="s2.c3.body">HTMLベースなら、<br><strong>データと見た目を分離</strong>できる。<br>更新・翻訳・再構成が圧倒的に楽になる。</div>
+        </div>
+
+        <div class="wy-card wy-card-accent">
+          <div class="wy-icon">🚀</div>
+          <div class="wy-title" data-i18n="s2.c4.title">デジタルの力を解放すれば、プレゼンは進化する</div>
+          <div class="wy-body" data-i18n="s2.c4.body">インタラクティブに、構造的に、<br>自由度高く。<br><strong>GitHub Copilot があれば</strong>、<br>それを誰でも実現できる。</div>
+        </div>
+
+      </div>
+      <div class="wy-conclusion" data-i18n="s2.conclusion">
+        GitHub Copilotでプレゼンテーションを再発明しよう。
+      </div>
+    </div>
+  </div>
+
+  <!-- S3: デモンストレーション概要 -->
+  <div class="slide" id="s3m">
+    <div class="demo-intro-wrap">
+      <div class="pill" data-i18n="s3m.pill">Demonstration</div>
+      <h2 data-i18n="s3m.h2">このスライドには、<br>プレゼンを変える<strong>6つの仕掛け</strong>が<br>組み込まれている。</h2>
+      <p data-i18n="s3m.p">触れて、感じて、驚いてください。<br>すべて GitHub Copilot で生成しました。</p>
+      <div class="demo-feat-grid">
+        <div class="demo-feat">
+          <div class="demo-feat-icon">✋</div>
+          <div class="demo-feat-num">01</div>
+          <div class="demo-feat-name" data-i18n="s3m.f1.name">マウスオーバー強調</div>
+          <div class="demo-feat-desc" data-i18n="s3m.f1.desc">乗せるだけで視線が集まる</div>
+        </div>
+        <div class="demo-feat">
+          <div class="demo-feat-icon">🔦</div>
+          <div class="demo-feat-num">02</div>
+          <div class="demo-feat-name" data-i18n="s3m.f2.name">スポットライト</div>
+          <div class="demo-feat-desc" data-i18n="s3m.f2.desc">S キーで暗転＆集中</div>
+        </div>
+        <div class="demo-feat">
+          <div class="demo-feat-icon">⌨️</div>
+          <div class="demo-feat-num">03</div>
+          <div class="demo-feat-name" data-i18n="s3m.f3.name">アニメーション演出</div>
+          <div class="demo-feat-desc" data-i18n="s3m.f3.desc">タイピング＆カウントアップ</div>
+        </div>
+        <div class="demo-feat">
+          <div class="demo-feat-icon">⇔</div>
+          <div class="demo-feat-num">04</div>
+          <div class="demo-feat-name" data-i18n="s3m.f4.name">比較スライダー</div>
+          <div class="demo-feat-desc" data-i18n="s3m.f4.desc">クリックで変化を体感</div>
+        </div>
+        <div class="demo-feat">
+          <div class="demo-feat-icon">🌐</div>
+          <div class="demo-feat-num">05</div>
+          <div class="demo-feat-name" data-i18n="s3m.f5.name">多言語切り替え</div>
+          <div class="demo-feat-desc" data-i18n="s3m.f5.desc">1つのHTMLで日英対応</div>
+        </div>
+        <div class="demo-feat">
+          <div class="demo-feat-icon">📝</div>
+          <div class="demo-feat-num">06</div>
+          <div class="demo-feat-name" data-i18n="s3m.f6.name">フィードバックメモ</div>
+          <div class="demo-feat-desc" data-i18n="s3m.f6.desc">その場でメモ → Copilotへ</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3: 仕掛け① マウスオーバー強調 -->
+  <div class="slide" id="s3"><div class="ucw">
+    <div class="ucl">
+      <div class="bignum">1</div>
+      <div class="icon">✋</div>
+      <h2 data-i18n="s3.h2">マウスオーバーで<br>強調表示</h2>
+      <p data-i18n="s3.p">話しながら「ここ大事です」と言う代わりに、<br>マウスを乗せるだけ。<br>伝えたい言葉が自然に大きくなり、<br>聴衆の視線が集まる。</p>
+    </div>
+    <div class="uccard">
+      <div class="uccard-h" data-i18n="s3.card.h">今すぐ試せる — このスライド上でマウスを動かして</div>
+      <ul class="uclist">
+        <li data-i18n="s3.li1">気になる行にマウスを乗せると文字が大きくなる</li>
+        <li class="orange-hover" data-i18n="s3.li2">行の背景がオレンジになり「ここが重要」と伝わる</li>
+        <li class="orange-hover" data-i18n="s3.li3">1行ずつ反応するから、ピンポイントで届く</li>
+      </ul>
+    </div>
+  </div></div>
+
+  <!-- S4: 仕掛け② スポットライト -->
+  <div class="slide" id="s4"><div class="ucw">
+    <div class="ucl">
+      <div class="bignum">2</div>
+      <div class="icon">🔦</div>
+      <h2 data-i18n="s4.h2">スポットライト<br>モード</h2>
+      <p data-i18n="s4.p">「ここを見てください」を、<br>言葉なしで伝える。<br>S キーを押した瞬間、<br>マウスの周囲だけが照らされ、<br>他はすべて暗転する。</p>
+    </div>
+    <div class="uccard">
+      <div class="uccard-h" data-i18n="s4.card.h">今すぐ試せる — キーボードの S を押して</div>
+      <ul class="uclist">
+        <li data-i18n="s4.li1">S キーでスポットライト ON / OFF</li>
+        <li data-i18n="s4.li2">マウスを動かすと光が追いかけてくる</li>
+        <li data-i18n="s4.li3">聴衆の視線を一点に集中させられる</li>
+        <li data-i18n="s4.li4">暗転することで、言葉より強く注目を促せる</li>
+        <li data-i18n="s4.li5">もう一度 S を押すと元の画面に戻る</li>
+      </ul>
+    </div>
+    <div style="position:absolute;bottom:90px;right:36px;font-size:22px;pointer-events:none;user-select:none;">🐕</div>
+  </div></div>
+
+  <!-- S5: 仕掛け③ アニメーション演出 -->
+  <div class="slide" id="s5"><div class="ucw">
+    <div class="ucl">
+      <div class="bignum">3</div>
+      <div class="icon">⌨️</div>
+      <h2 data-i18n="s5.h2">アニメーション<br>演出</h2>
+      <p data-i18n="s5.p">スライドに入る瞬間、<br>文字が打ち込まれ、数字が走る。<br>静止したスライドより、<br>圧倒的に記憶に残る体験を作れる。</p>
+    </div>
+    <div class="uccard anim-card-wrap">
+      <div class="uccard-h" data-i18n="s5.card.h">クリックして体験する</div>
+      <!-- DEMO A: ライブタイピング -->
+      <div class="anim-card">
+        <div class="anim-card-head">
+          <span class="anim-num">A</span>
+          <span class="anim-label" data-i18n="s5.labelA">ライブタイピング演出</span>
+          <button class="anim-trigger" id="trigger-typing" onclick="triggerTyping()">▶ 再生</button>
+        </div>
+        <div class="cwin" style="margin-top:8px;">
+          <div class="cbar"><div class="cd r"></div><div class="cd y"></div><div class="cd g"></div><span>GitHub Copilot Chat</span></div>
+          <div class="cmsgs" id="chat-msgs"></div>
+        </div>
+      </div>
+      <!-- DEMO B: カウントアップ -->
+      <div class="anim-card" style="border-top:1px solid var(--border);border-radius:0;padding-top:16px;">
+        <div class="anim-card-head">
+          <span class="anim-num">B</span>
+          <span class="anim-label" data-i18n="s5.labelB">数字カウントアップ</span>
+          <button class="anim-trigger" id="trigger-count" onclick="triggerCount()">▶ 再生</button>
+        </div>
+        <div class="count-demo-box">
+          <div class="count-demo-label" data-i18n="s5.countLabel">このプレゼンで理解度が深まる率</div>
+          <div class="count-demo-num"><span id="count-20">0</span><span class="count-unit">%</span></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- S6: 仕掛け④ 比較スライダー -->
+  <div class="slide" id="s6">
+    <div class="ucw" style="align-items:start;">
+    <div class="ucl">
+      <div class="bignum">4</div>
+      <div class="icon">⇔</div>
+      <h2 data-i18n="s6.h2">比較スライダー</h2>
+      <p data-i18n="s6.p">縦線をドラッグすると、<br>左に「従来のやり方」、右に「Copilotで変わった姿」が現れる。<br>変化をよりわかりやすく。</p>
+    </div>
+    <div class="uccard ba-toggle-card" style="max-width:380px;">
+      <div class="uccard-h" data-i18n="s6.card.h">縦線を左右にドラッグしてBEFORE/AFTERを比較しよう</div>
+      <div class="ba-rows" id="ba-rows">
+        <div class="ba-comp-row">
+          <div class="ba-comp-label ba-comp-label-b">Before</div>
+          <div class="ba-comp-label ba-comp-label-a">After</div>
+          <div class="ba-comp-layer ba-comp-after" data-i18n="s6.r1.after">🎨 Copilotに伝えるだけで即完成</div>
+          <div class="ba-comp-layer ba-comp-before" data-i18n="s6.r1.before">😰 コードが書けないから無理</div>
+          <div class="ba-comp-handle"><div class="ba-comp-line"></div><div class="ba-comp-knob">◀▶</div></div>
+        </div>
+        <div class="ba-comp-row">
+          <div class="ba-comp-label ba-comp-label-b">Before</div>
+          <div class="ba-comp-label ba-comp-label-a">After</div>
+          <div class="ba-comp-layer ba-comp-after" data-i18n="s6.r2.after">🤝 触れて・動かして・双方向体験</div>
+          <div class="ba-comp-layer ba-comp-before" data-i18n="s6.r2.before">😴 順番にめくりながら一方的に話す</div>
+          <div class="ba-comp-handle"><div class="ba-comp-line"></div><div class="ba-comp-knob">◀▶</div></div>
+        </div>
+        <div class="ba-comp-row">
+          <div class="ba-comp-label ba-comp-label-b">Before</div>
+          <div class="ba-comp-label ba-comp-label-a">After</div>
+          <div class="ba-comp-layer ba-comp-after" data-i18n="s6.r3.after">🚀 「伝わる」プレゼンで行動が変わる</div>
+          <div class="ba-comp-layer ba-comp-before" data-i18n="s6.r3.before">📝 「伝えた」つもりが記憶に残らない</div>
+          <div class="ba-comp-handle"><div class="ba-comp-line"></div><div class="ba-comp-knob">◀▶</div></div>
+        </div>
+      </div>
+      <div class="ba-toggle-reset-wrap">
+        <button class="ba-reset-btn" onclick="resetBaRows()">↺ リセット</button>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- S7: 仕掛け⑤ 多言語切り替え -->
+  <div class="slide" id="s7"><div class="ucw">
+    <div class="ucl">
+      <div class="bignum">5</div>
+      <div class="icon">🌐</div>
+      <h2 data-i18n="s7.h2">多言語切り替え</h2>
+      <p data-i18n="s7.p">右上のボタンひとつで日本語と英語を切り替え。<br>HTMLファイルは1つだけ。<br>翻訳データを内蔵し、<br>ページを再読み込みすることなく瞬時に切り替わる。</p>
+    </div>
+    <div class="uccard">
+      <div class="uccard-h" data-i18n="s7.card.h">今すぐ試せる — 右上の「日本語 / EN」ボタンを押して</div>
+      <ul class="uclist">
+        <li data-i18n="s7.li1">1つのHTMLに日本語・英語の全テキストを内蔵</li>
+        <li class="orange-hover" data-i18n="s7.li2">ボタンを押すだけで全スライドが瞬時に切り替わる</li>
+        <li class="orange-hover" data-i18n="s7.li3">翻訳追加も辞書にテキストを足すだけ、構造の変更は不要</li>
+      </ul>
+    </div>
+  </div></div>
+
+  <!-- S8: 仕掛け⑥ フィードバックメモ -->
+  <div class="slide" id="s8"><div class="ucw">
+    <div class="ucl">
+      <div class="bignum">6</div>
+      <div class="icon">📝</div>
+      <h2 data-i18n="s8.h2">フィードバック<br>メモ</h2>
+      <p data-i18n="s8.p">プレゼン中に気づいた修正点を、<br>その場でスライドごとにメモ。<br>終わったらテキストをダウンロードして、<br>そのまま GitHub Copilot への指示に使える。</p>
+    </div>
+    <div class="uccard">
+      <div class="uccard-h" data-i18n="s8.card.h">今すぐ試せる — 右上の 📝 ボタンを押して</div>
+      <ul class="uclist">
+        <li data-i18n="s8.li1">プレゼン中にスライドごとのメモを即座に記録</li>
+        <li class="orange-hover" data-i18n="s8.li2">メモにはスライド番号とタイムスタンプが自動付与</li>
+        <li class="orange-hover" data-i18n="s8.li3">テキストでダウンロード → そのまま Copilot に貼って修正指示</li>
+      </ul>
+    </div>
+  </div></div>
+
+  <!-- S9: ENDING -->
+  <div class="slide" id="s9">
+    <div class="big" data-i18n="s9.big">さあ、やってみましょう！</div>
+    <p data-i18n="s9.p" style="margin-bottom:32px;">このプレゼンと同じものを作るための<br>instruction ファイルを用意しました。<br>コピペして GitHub Copilot に渡すだけ。<br>あなたのプレゼンが、体験に変わる。</p>
+    <div class="end-links">
+      <a class="end-link-card" href="https://github.com/FukudaRikako/copilot-transforms-presentations" target="_blank" rel="noopener">
+        <span class="end-link-icon">📋</span>
+        <span class="end-link-title" data-i18n="s9.link1.title">Instruction ファイルを<br>コピーして使う</span>
+        <span class="end-link-desc" data-i18n="s9.link1.desc">presentation-transform.instructions.md</span>
+      </a>
+      <a class="end-link-card" href="https://github.com/FukudaRikako/azure-no-auth-demo" target="_blank" rel="noopener">
+        <span class="end-link-icon">🌐</span>
+        <span class="end-link-title" data-i18n="s9.link2.title">Azure にデプロイ<br>（認証なし）</span>
+        <span class="end-link-desc" data-i18n="s9.link2.desc">誰でもアクセスできる<br>サイトを作る</span>
+      </a>
+      <a class="end-link-card" href="https://github.com/FukudaRikako/azure-entra-auth-demo" target="_blank" rel="noopener">
+        <span class="end-link-icon">🔐</span>
+        <span class="end-link-title" data-i18n="s9.link3.title">Azure にデプロイ<br>（Entra ID 認証）</span>
+        <span class="end-link-desc" data-i18n="s9.link3.desc">Microsoft Entra ID で<br>ログイン認証をかける</span>
+      </a>
+    </div>
+  </div>
+
+</div><!-- #stage -->
+
+<div id="nav">
+  <div style="display:flex;align-items:center;gap:14px;">
+    <button class="nbtn" id="bprev" onclick="move(-1)" disabled>←</button>
+    <span id="ctr">1 / 12</span>
+    <button class="nbtn" id="bnext" onclick="move(1)">→</button>
+  </div>
+  <div id="dots"></div>
+  <div id="copyright"><a href="https://github.com/FukudaRikako" target="_blank" rel="noopener">© FukudaRikako</a></div>
+</div>
+
+<script>
+// ─── SLIDE CONTROLLER ───────────────────────────
+const slides=document.querySelectorAll('.slide');
+const N=slides.length;
+let cur=0,busy=false;
+const dotsEl=document.getElementById('dots');
+slides.forEach((_,i)=>{
+  const d=document.createElement('div');
+  d.className='dot'+(i===0?' on':'');
+  d.onclick=()=>goTo(i);
+  dotsEl.appendChild(d);
+});
+function ui(){
+  const t=(cur+1)+' / '+N;
+  document.getElementById('ctr').textContent=t;
+  document.getElementById('bprev').disabled=cur===0;
+  document.getElementById('bnext').disabled=cur===N-1;
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i===cur));
+  document.getElementById('pbar').style.width=((cur/(N-1))*100)+'%';
+}
+function goTo(next){
+  if(busy||next===cur||next<0||next>=N)return;
+  busy=true;
+  const dir=next>cur?1:-1;
+  const lv=slides[cur],en=slides[next];
+  en.style.opacity='1';en.classList.add('active');
+  lv.classList.add(dir>0?'exL':'exR');
+  en.classList.add(dir>0?'enR':'enL');
+  en.addEventListener('animationend',()=>{
+    lv.classList.remove('active','exL','exR');lv.style.opacity='';
+    en.classList.remove('enR','enL');
+    cur=next;ui();startAnim(cur);
+    onSlideEnter(cur);
+    busy=false;
+  },{once:true});
+}
+function move(d){goTo(cur+d);}
+
+// ─── SLIDE ENTER HOOKS ──────────────────────────
+function onSlideEnter(idx){
+  if(idx===6) triggerTyping();  // S7: アニメーション演出
+}
+
+// ─── ① SPOTLIGHT ────────────────────────────────
+const spotlight=document.getElementById('spotlight');
+const spotBadge=document.getElementById('spotlight-badge');
+let spotOn=false;
+let mx=window.innerWidth/2, my=window.innerHeight/2;
+
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX; my=e.clientY;
+  if(spotOn) updateSpot();
+});
+function updateSpot(){
+  spotlight.style.background=
+    `radial-gradient(circle 220px at ${mx}px ${my}px,
+      transparent 0%,
+      transparent 38%,
+      rgba(37,26,17,.74) 68%,
+      rgba(37,26,17,.90) 100%)`;
+}
+// ─── CARD MODAL ────────────────────────────────────────────
+const CARD_DATA=[
+  {icon:'📜',title:'せっかくのデジタルなのに、「めくるだけ」',body:'デジタルになったのに、やることは紙芝居と同じ。テキストを並べて、順番にめくる。<strong>デジタルの自由度をまったく活かせていない</strong>。',accent:false},
+  {icon:'🔄',title:'インタラクションがあれば、聴衆は離れない',body:'一方通行の発表では集中力が続かない。触れる・動く・反応する。<strong>インタラクティブな体験</strong>が、聴衆の没入を生む。',accent:false},
+  {icon:'🏗️',title:'構造的に管理できれば、再利用も自由自在',body:'HTMLベースなら、<strong>データと見た目を分離</strong>できる。更新・翻訳・再構成が圧倒的に楽になる。',accent:false},
+  {icon:'🚀',title:'デジタルの力を解放すれば、プレゼンは進化する',body:'インタラクティブに、構造的に、自由度高く。<strong>GitHub Copilot があれば</strong>、それを誰でも実現できる。',accent:true},
+  {icon:'✨',title:'GitHub Copilotでプレゼンテーションを再発明しよう。',body:'プログラミングの知識がなくても、Copilot に伝えれば、<strong>インタラクティブなスライドが生まれる</strong>。このスライド自体が、その証明だ。',accent:true},
+];
+const cmModal=document.getElementById('card-modal');
+const cmCard=document.getElementById('card-modal-card');
+const cmIcon=document.getElementById('card-modal-icon');
+const cmTitle=document.getElementById('card-modal-title');
+const cmBody=document.getElementById('card-modal-body');
+const cmCounter=document.getElementById('card-modal-counter');
+let cmIdx=0;
+
+function openCardModal(idx){
+  cmIdx=idx;
+  renderCardModal();
+  cmModal.classList.add('on');
+}
+function closeCardModal(){
+  cmModal.classList.remove('on');
+}
+function renderCardModal(){
+  const d=CARD_DATA[cmIdx];
+  cmIcon.textContent=d.icon;
+  cmTitle.innerHTML=d.title;
+  cmBody.innerHTML=d.body;
+  cmCounter.textContent=(cmIdx+1)+' / '+CARD_DATA.length;
+  document.getElementById('cm-prev').disabled=cmIdx===0;
+  document.getElementById('cm-next').disabled=cmIdx===CARD_DATA.length-1;
+  cmCard.classList.toggle('modal-accent',d.accent);
+}
+function cmMove(dir){
+  const next=cmIdx+dir;
+  if(next<0||next>=CARD_DATA.length)return;
+  cmIdx=next;
+  renderCardModal();
+}
+document.getElementById('card-modal-close').addEventListener('click',closeCardModal);
+cmModal.addEventListener('click',e=>{ if(e.target===cmModal) closeCardModal(); });
+
+// Attach click to wy-cards and wy-conclusion
+document.querySelectorAll('#s2 .wy-card').forEach((card,i)=>{
+  card.addEventListener('click',()=>openCardModal(i));
+});
+const wyConc=document.querySelector('#s2 .wy-conclusion');
+if(wyConc) wyConc.addEventListener('click',()=>openCardModal(4));
+
+// ESC and arrow keys for modal
+document.addEventListener('keydown',e=>{
+  if(!cmModal.classList.contains('on'))return;
+  if(e.key==='Escape'){ e.stopPropagation(); closeCardModal(); }
+  if(e.key==='ArrowRight'){ e.stopPropagation(); e.preventDefault(); cmMove(1); }
+  if(e.key==='ArrowLeft'){ e.stopPropagation(); e.preventDefault(); cmMove(-1); }
+});
+
+function toggleSpot(){
+  spotOn=!spotOn;
+  spotlight.classList.toggle('on',spotOn);
+  spotBadge.classList.toggle('on',spotOn);
+  if(spotOn) updateSpot();
+}
+
+// ─── ② LIVE TYPING (S5 クリック or 自動) ──────────
+function triggerTyping(){
+  const btn=document.getElementById('trigger-typing');
+  if(btn){ btn.textContent='⏸ 再生中…'; btn.classList.add('playing'); }
+  startTyping(()=>{
+    if(btn){ btn.textContent='▶ もう一度'; btn.classList.remove('playing'); }
+  });
+}
+
+// ─── ② COUNT-UP (S5 クリック) ───────────────────
+function triggerCount(){
+  const btn=document.getElementById('trigger-count');
+  if(btn){ btn.textContent='⏸ カウント中…'; btn.classList.add('playing'); }
+  const el=document.getElementById('count-20');
+  if(!el) return;
+  el.textContent='0';
+  const target=100, duration=1600;
+  const start=performance.now();
+  function tick(now){
+    const p=Math.min(1,(now-start)/duration);
+    // 最初はゆっくり、後半は一気に加速する感じ
+    const ease=p<0.6 ? p*p*2.78 : 1-Math.pow(1-p,2.5);
+    const v=Math.round(ease*target);
+    el.textContent=v;
+    if(p<1){ requestAnimationFrame(tick); }
+    else {
+      el.textContent=100;
+      if(btn){ btn.textContent='▶ もう一度'; btn.classList.remove('playing'); }
+    }
+  }
+  requestAnimationFrame(tick);
+}
+const CHAT_USER = 'インタラクティブなプレゼンスライドを作りたいです。マウスを乗せると文字が大きくなって、Sキーでスポットライト効果が出るようにしてください。';
+const CHAT_AI_INTRO = 'いいですね！HTML と JavaScript で全部実装できます。こんな構成にしましょう：';
+const CHAT_AI_ITEMS = [
+  'マウスオーバーで文字が拡大 → CSS の transform: scale() で1行ずつ反応',
+  'Sキーでスポットライト → radial-gradient でマウス周囲だけ明るくする',
+  'ライブタイピング演出 → スライドに入るたびに文字を1文字ずつ表示',
+  '数字カウントアップ → requestAnimationFrame でイーズアウト',
+  'Before/Afterスライダー → clip-path をドラッグで動かす',
+];
+const CHAT_AI_OUTRO = 'コードは全部生成します。ファイル1つで動きます。やってみましょうか？';
+
+let typingTimer=null;
+
+function startTyping(onDone){
+  const box=document.getElementById('chat-msgs');
+  if(!box) return;
+  box.innerHTML='';
+  if(typingTimer) clearTimeout(typingTimer);
+
+  // Step 1: user bubble appears instantly
+  const uBub=document.createElement('div');
+  uBub.className='bb u';
+  uBub.innerHTML='<div class="who">あなた</div>';
+  const uText=document.createElement('span');
+  uBub.appendChild(uText);
+  box.appendChild(uBub);
+
+  typeText(uText, CHAT_USER, 28, ()=>{
+    // Step 2: AI "thinking" dots
+    typingTimer=setTimeout(()=>{
+      const aiBub=document.createElement('div');
+      aiBub.className='bb a';
+      aiBub.innerHTML='<div class="who">GitHub Copilot</div>';
+      const aiBody=document.createElement('div');
+      aiBub.appendChild(aiBody);
+      box.appendChild(aiBub);
+
+      // thinking indicator
+      const thinking=document.createElement('span');
+      thinking.className='typing-cursor';
+      aiBody.appendChild(thinking);
+
+      typingTimer=setTimeout(()=>{
+        aiBody.innerHTML='';
+        const introSpan=document.createElement('span');
+        aiBody.appendChild(introSpan);
+        typeText(introSpan, CHAT_AI_INTRO, 18, ()=>{
+          // list items appear one by one
+          const ul=document.createElement('ul');
+          aiBody.appendChild(ul);
+          let i=0;
+          function nextItem(){
+            if(i>=CHAT_AI_ITEMS.length){
+              // outro
+              const outroSpan=document.createElement('span');
+              outroSpan.style.display='block';
+              outroSpan.style.marginTop='6px';
+              aiBody.appendChild(outroSpan);
+              typeText(outroSpan, CHAT_AI_OUTRO, 22, onDone||null);
+              return;
+            }
+            typingTimer=setTimeout(()=>{
+              const li=document.createElement('li');
+              ul.appendChild(li);
+              typeText(li, CHAT_AI_ITEMS[i], 20, ()=>{ i++; nextItem(); });
+            }, 120);
+          }
+          nextItem();
+        });
+      }, 700);
+    }, 400);
+  });
+}
+
+function typeText(el, text, speed, cb){
+  let i=0;
+  // add cursor
+  const cursor=document.createElement('span');
+  cursor.className='typing-cursor';
+  el.appendChild(cursor);
+  function tick(){
+    if(i<text.length){
+      el.insertBefore(document.createTextNode(text[i]), cursor);
+      i++;
+      // チャット欄を常に最新行にスクロール
+      const box=document.getElementById('chat-msgs');
+      if(box) box.scrollTop=box.scrollHeight;
+      typingTimer=setTimeout(tick, speed+(Math.random()*speed*.6));
+    } else {
+      cursor.remove();
+      if(cb) typingTimer=setTimeout(cb, 200);
+    }
+  }
+  tick();
+}
+
+// ─── ③ COUNT-UP (S11) ───────────────────────────
+function startCountUp(){
+  const el=document.getElementById('count-20');
+  if(!el) return;
+  el.textContent='0';
+  let v=0;
+  const target=4;
+  const duration=1200;
+  const start=performance.now();
+  function tick(now){
+    const p=Math.min(1,(now-start)/duration);
+    const ease=1-Math.pow(1-p,3);
+    v=Math.round(ease*target);
+    el.textContent=v;
+    if(p<1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// ─── S6 縦線ドラッグ型 Before/After スライダー ─────────
+(function initBaSliders(){
+  document.querySelectorAll('.ba-comp-row').forEach(row=>{
+    const handle=row.querySelector('.ba-comp-handle');
+    const before=row.querySelector('.ba-comp-before');
+    const labelB=row.querySelector('.ba-comp-label-b');
+    const labelA=row.querySelector('.ba-comp-label-a');
+    let dragging=false;
+
+    function setPos(x){
+      const rect=row.getBoundingClientRect();
+      let pct=((x-rect.left)/rect.width)*100;
+      pct=Math.max(0,Math.min(100,pct));
+      handle.style.left=pct+'%';
+      before.style.clipPath='inset(0 '+(100-pct)+'% 0 0)';
+      // Beforeラベル: ハンドルが左側にあるほど見える
+      labelB.style.opacity=Math.min(1, pct/40);
+      // Afterラベル: ハンドルが右側にあるほど見える
+      labelA.style.opacity=Math.min(1, (100-pct)/40);
+    }
+
+    handle.addEventListener('mousedown',e=>{ e.preventDefault(); dragging=true; });
+    handle.addEventListener('touchstart',e=>{ dragging=true; },{passive:true});
+    document.addEventListener('mousemove',e=>{ if(dragging) setPos(e.clientX); });
+    document.addEventListener('touchmove',e=>{ if(dragging) setPos(e.touches[0].clientX); },{passive:true});
+    document.addEventListener('mouseup',()=>{ dragging=false; });
+    document.addEventListener('touchend',()=>{ dragging=false; });
+
+    // click anywhere on row to jump
+    row.addEventListener('click',e=>{ if(!handle.contains(e.target)) setPos(e.clientX); });
+  });
+})();
+
+function resetBaRows(){
+  document.querySelectorAll('.ba-comp-row').forEach(row=>{
+    const handle=row.querySelector('.ba-comp-handle');
+    const before=row.querySelector('.ba-comp-before');
+    const labelB=row.querySelector('.ba-comp-label-b');
+    const labelA=row.querySelector('.ba-comp-label-a');
+    handle.style.left='100%';
+    before.style.clipPath='inset(0 0% 0 0)';
+    labelB.style.opacity=1;
+    labelA.style.opacity=0;
+  });
+}
+
+// ─── SLIDE OVERVIEW ─────────────────────────────
+const OV_DATA = [
+  { icon:'🌅', title:'タイトル',             desc:'プレゼンが変わる、世界が変わる' },
+  { icon:'📜', title:'課題提起',             desc:'プレゼンはまだ紙芝居のままだ' },
+  { icon:'🎪', title:'デモンストレーション',   desc:'6つの仕掛けを体験する' },
+  { icon:'✋', title:'仕掛け① マウスオーバー', desc:'話しながら強調できる' },
+  { icon:'🔦', title:'仕掛け② スポットライト', desc:'S キーで視線を集中' },
+  { icon:'⌨️', title:'仕掛け③ アニメーション', desc:'タイピング & カウントアップ体験' },
+  { icon:'⇔',  title:'仕掛け④ 比較スライダー', desc:'クリックで変化を体感' },
+  { icon:'🌐', title:'仕掛け⑤ 多言語切替',      desc:'1つのHTMLで日英対応' },
+  { icon:'📝', title:'仕掛け⑥ フィードバックメモ', desc:'その場でメモ → Copilotへ' },
+  { icon:'✨', title:'エンディング',            desc:'さあ、やってみましょう！' },
+];
+
+const ovBtn   = document.getElementById('overview-btn');
+const ovPanel = document.getElementById('overview');
+const ovClose = document.getElementById('overview-close');
+const ovGrid  = document.getElementById('ov-grid');
+
+// グリッドを生成
+OV_DATA.forEach((d,i)=>{
+  const card = document.createElement('div');
+  card.className = 'ov-card';
+  card.innerHTML =
+    `<div class="ov-num">${String(i+1).padStart(2,'0')}</div>`+
+    `<div class="ov-icon">${d.icon}</div>`+
+    `<div class="ov-title">${d.title}</div>`+
+    `<div class="ov-desc">${d.desc}</div>`;
+  card.onclick = ()=>{ closeOverview(); goTo(i); };
+  ovGrid.appendChild(card);
+});
+
+function openOverview(){
+  // 現在スライドをハイライト
+  ovGrid.querySelectorAll('.ov-card').forEach((c,i)=>
+    c.classList.toggle('ov-cur', i===cur)
+  );
+  ovPanel.classList.add('on');
+  ovClose.classList.add('on');
+}
+function closeOverview(){
+  ovPanel.classList.remove('on');
+  ovClose.classList.remove('on');
+}
+
+ovBtn.addEventListener('click', ()=>{ ovPanel.classList.contains('on') ? closeOverview() : openOverview(); });
+ovClose.addEventListener('click', closeOverview);
+ovPanel.addEventListener('click', e=>{ if(e.target===ovPanel) closeOverview(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeOverview(); closeMemo(); } });
+document.addEventListener('keydown',e=>{
+  if(cmModal.classList.contains('on'))return; // modal open → skip slide nav
+  if(document.activeElement===document.getElementById('memo-input'))return; // memo input is focused
+  if(['ArrowRight',' '].includes(e.key)){e.preventDefault();move(1);}
+  if(e.key==='ArrowLeft'){e.preventDefault();move(-1);}
+  if(e.key.toLowerCase()==='s') toggleSpot();
+});
+let tx=0;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50)move(dx<0?1:-1);});
+setTimeout(()=>document.getElementById('hint').classList.add('gone'),4000);
+
+// ─── FEEDBACK MEMO ──────────────────────────────
+const memoPanel=document.getElementById('memo-panel');
+const memoList=document.getElementById('memo-list');
+const memoInput=document.getElementById('memo-input');
+const memoSlideTag=document.getElementById('memo-slide-tag');
+const memoCount=document.getElementById('memo-count');
+const memoBtn=document.getElementById('memo-btn');
+let memos=[];
+
+const stage=document.getElementById('stage');
+function toggleMemo(){
+  memoPanel.classList.toggle('open');
+  const isOpen=memoPanel.classList.contains('open');
+  if(window.innerWidth>700) stage.classList.toggle('memo-shift',isOpen);
+  if(isOpen){
+    updateMemoSlideTag();
+    memoInput.focus();
+  }
+}
+function closeMemo(){
+  memoPanel.classList.remove('open');
+  stage.classList.remove('memo-shift');
+}
+
+function updateMemoSlideTag(){
+  memoSlideTag.textContent='Slide '+(cur+1)+' / '+N;
+}
+
+// Update slide tag when slide changes
+const origUi=ui;
+ui=function(){
+  origUi();
+  if(memoPanel.classList.contains('open')) updateMemoSlideTag();
+};
+
+function addMemo(){
+  const text=memoInput.value.trim();
+  if(!text)return;
+  const memo={
+    slide:cur+1,
+    slideTotal:N,
+    text:text,
+    time:new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})
+  };
+  memos.push(memo);
+  memoInput.value='';
+  renderMemos();
+  updateMemoSlideTag();
+  memoBtn.classList.add('has-notes');
+}
+
+function deleteMemo(idx){
+  memos.splice(idx,1);
+  renderMemos();
+  if(memos.length===0) memoBtn.classList.remove('has-notes');
+}
+
+function renderMemos(){
+  memoList.innerHTML='';
+  memos.forEach((m,i)=>{
+    const div=document.createElement('div');
+    div.className='memo-item';
+    div.innerHTML=
+      '<div class="memo-item-head">'+
+        '<span class="memo-item-slide">Slide '+m.slide+' / '+m.slideTotal+'</span>'+
+        '<span class="memo-item-time">'+m.time+'</span>'+
+      '</div>'+
+      '<div class="memo-item-text">'+escapeHtml(m.text)+'</div>'+
+      '<button class="memo-item-del" onclick="deleteMemo('+i+')">\u00d7</button>';
+    memoList.appendChild(div);
+  });
+  memoCount.textContent=memos.length+' 件';
+  memoList.scrollTop=memoList.scrollHeight;
+}
+
+function escapeHtml(s){
+  const d=document.createElement('div');
+  d.textContent=s;
+  return d.innerHTML;
+}
+
+function downloadMemo(){
+  if(memos.length===0)return;
+  const title=document.querySelector('.top-logo')?.textContent||'Presentation';
+  const date=new Date().toLocaleDateString('ja-JP');
+  let txt='# フィードバックメモ\n';
+  txt+='プレゼン: '+title+'\n';
+  txt+='日時: '+date+'\n';
+  txt+='─'.repeat(40)+'\n\n';
+  memos.forEach((m,i)=>{
+    txt+='['+(i+1)+'] Slide '+m.slide+'/'+m.slideTotal+' ('+m.time+')\n';
+    txt+=m.text+'\n\n';
+  });
+  txt+='─'.repeat(40)+'\n';
+  txt+='合計: '+memos.length+' 件のフィードバック\n';
+
+  const blob=new Blob([txt],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='feedback-memo_'+new Date().toISOString().slice(0,10)+'.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Ctrl+Enter to add memo
+memoInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){
+    e.preventDefault();
+    addMemo();
+  }
+});
+
+// ─── CANVAS ENGINE ──────────────────────────────
+const cv=document.getElementById('bg-canvas');
+const cx=cv.getContext('2d');
+let W,H,T=0,mode='';
+
+function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;}
+window.addEventListener('resize',()=>{resize();initAnim(mode);});
+resize();
+
+// Color helpers
+const C_TERRA=(a)=>`rgba(201,95,42,${a})`;
+const C_SAGE =(a)=>`rgba(90,138,110,${a})`;
+const C_WARM =(a)=>`rgba(250,220,192,${a})`;
+const C_MUTED=(a)=>`rgba(154,138,124,${a})`;
+
+// ── 1. S1 — Slide Metamorphosis (smooth crossfade) ──
+let transforms=[];
+
+// なめらかなイーズ関数
+function _eio(t){ return t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2; }
+function _eo3(t){ return 1-Math.pow(1-t,3); }
+// s=立ち上がり終了位置 e=立ち下がり開始位置 (0〜1)
+function _env(p,s,e){ return p<=0?0:p<s?_eio(p/s):p>e?_eio((1-p)/(1-e)):1; }
+// [lo,hi] 区間を 0〜1 に正規化
+function _norm(p,lo,hi){ return Math.max(0,Math.min(1,(p-lo)/(hi-lo))); }
+
+function initStars(){
+  transforms=[];
+  for(let i=0;i<7;i++) _spawnTr(Math.random());
+}
+
+function _spawnTr(prog){
+  const x=W*0.08+Math.random()*W*0.84;
+  const y=H*0.08+Math.random()*H*0.84;
+  const w=72+Math.random()*64;
+  const h=w*0.64;
+  const rot=(Math.random()-0.5)*0.22;
+  const spd=0.0012+Math.random()*0.0009;  // もっとゆっくりに
+  const nF=16+Math.floor(Math.random()*8);
+  const frags=[];
+  for(let i=0;i<nF;i++){
+    const ang=Math.random()*Math.PI*2;
+    frags.push({
+      ox:(Math.random()-0.5)*w*0.62,
+      oy:(Math.random()-0.5)*h*0.62,
+      vx:Math.cos(ang)*w*(0.45+Math.random()*0.55),
+      vy:Math.sin(ang)*h*(0.45+Math.random()*0.55),
+      sz:1.5+Math.random()*4.2,
+      warm:Math.random()>0.30,
+    });
+  }
+  transforms.push({x,y,w,h,rot,spd,frags,prog:prog??0});
+}
+
+function drawStars(){
+  cx.clearRect(0,0,W,H);
+
+  // 背景グロー
+  const bg=cx.createRadialGradient(W/2,H*0.46,0,W/2,H*0.46,Math.min(W,H)*0.65);
+  bg.addColorStop(0,'rgba(255,240,226,.38)');
+  bg.addColorStop(1,'rgba(250,247,243,0)');
+  cx.fillStyle=bg; cx.fillRect(0,0,W,H);
+
+  transforms=transforms.filter(t=>t.prog<1.04);
+  if(transforms.length<6) _spawnTr(0);
+
+  transforms.forEach(t=>{
+    t.prog+=t.spd;
+    const p=Math.min(1,t.prog);
+    cx.save();
+    cx.translate(t.x,t.y);
+    cx.rotate(t.rot);
+
+    // ─── A: グレースライド p=0〜0.55
+    //   フェードイン 0→0.14  /  維持 0.14→0.40  /  フェードアウト 0.40→0.55
+    const grayA=_env(p, 0.14, 0.40) * (p<0.55?1:0);
+    if(grayA>0.004){
+      cx.beginPath(); cx.roundRect(-t.w/2,-t.h/2,t.w,t.h,5);
+      cx.fillStyle  =`rgba(160,148,136,${(grayA*0.16).toFixed(3)})`;
+      cx.strokeStyle=`rgba(160,148,136,${(grayA*0.32).toFixed(3)})`;
+      cx.lineWidth=1; cx.fill(); cx.stroke();
+      cx.beginPath();
+      cx.roundRect(-t.w/2+t.w*.10,-t.h/2+t.h*.16,t.w*.66,t.h*.13,2);
+      cx.fillStyle=`rgba(160,148,136,${(grayA*0.30).toFixed(3)})`; cx.fill();
+      [0.38,0.58].forEach((yp,i)=>{
+        cx.beginPath();
+        cx.roundRect(-t.w/2+t.w*.10,-t.h/2+t.h*yp,t.w*(.40+i*.10),t.h*.09,2);
+        cx.fillStyle=`rgba(160,148,136,${(grayA*0.20).toFixed(3)})`; cx.fill();
+      });
+    }
+
+    // ─── B: 亀裂の閃光 p=0.35〜0.62  (三角形の山、完全にイーズ)
+    const crackRaw=_norm(p,0.35,0.62);
+    const crackA=Math.sin(crackRaw*Math.PI)*0.48; // 0→peak→0 連続
+    if(crackA>0.005){
+      cx.save();
+      cx.globalAlpha=crackA;
+      cx.strokeStyle=C_TERRA('1');
+      cx.lineWidth=_eio(crackRaw<0.5?crackRaw*2:1)*2.0;
+      cx.lineCap='round';
+      cx.beginPath(); cx.moveTo(-t.w*.42,0); cx.lineTo(t.w*.42,0); cx.stroke();
+      cx.beginPath(); cx.moveTo(0,-t.h*.44); cx.lineTo(0,t.h*.44); cx.stroke();
+      cx.globalAlpha=crackA*0.35;
+      cx.lineWidth=0.8;
+      cx.beginPath(); cx.moveTo(-t.w*.28,-t.h*.28); cx.lineTo(t.w*.28,t.h*.28); cx.stroke();
+      cx.restore();
+    }
+
+    // ─── C: バースト + 破片 p=0.46〜1.0
+    const bRaw=_norm(p,0.46,1.0);
+    if(bRaw>0){
+      // フェード包絡: 0.46〜0.58 イン / 0.74〜1.0 アウト
+      const bFade=_env(bRaw, 0.22, 0.72);
+
+      // 中央グロー — イーズアウトで広がり、なだらかに消える
+      const glowR=t.w*(_eo3(bRaw)*0.82+0.12);
+      const glowA=(bFade*0.38).toFixed(3);
+      if(+glowA>0.005){
+        const gr=cx.createRadialGradient(0,0,0,0,0,glowR);
+        gr.addColorStop(0,  C_TERRA(glowA));
+        gr.addColorStop(0.45,C_TERRA((+glowA*.35).toFixed(3)));
+        gr.addColorStop(1,  C_TERRA('0'));
+        cx.beginPath(); cx.arc(0,0,glowR,0,Math.PI*2);
+        cx.fillStyle=gr; cx.fill();
+      }
+
+      // 破片 — _eo3 で減速しながら飛び、重力感あり
+      t.frags.forEach(f=>{
+        const move=_eo3(Math.min(1,bRaw*1.15));
+        const fx=f.ox+f.vx*move;
+        const fy=f.oy+f.vy*move+move*move*t.h*.20; // ゆるやかな重力
+        const fa=(bFade*.82).toFixed(3);
+        if(+fa<0.005) return;
+        cx.beginPath(); cx.arc(fx,fy,f.sz*.52,0,Math.PI*2);
+        cx.fillStyle=f.warm ? C_TERRA(fa) : C_SAGE(fa);
+        cx.fill();
+      });
+    }
+
+    cx.restore();
+  });
+}
+
+// ── 2. Ripple (S2) ───────────────────────────
+let rips=[];
+function initRip(){rips=[];}
+function drawRip(){
+  cx.clearRect(0,0,W,H);
+  const g=cx.createRadialGradient(W/2,H*.45,0,W/2,H*.45,Math.min(W,H)*.55);
+  g.addColorStop(0,'rgba(255,238,220,.5)');g.addColorStop(1,'rgba(250,247,243,0)');
+  cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  if(T%150===0) rips.push({x:W/2+(Math.random()-.5)*60,y:H/2+(Math.random()-.5)*60,r:12,a:.65});
+  rips=rips.filter(r=>r.a>.01);
+  rips.forEach(r=>{r.r+=0.75;r.a-=.0025;cx.beginPath();cx.arc(r.x,r.y,r.r,0,Math.PI*2);cx.strokeStyle=C_TERRA(r.a.toFixed(3));cx.lineWidth=1.5;cx.stroke();});
+}
+
+// ── 3. Flow (S3-S8) ────────────────────────
+let fDots=[];
+function initFlow(){fDots=[];}
+function drawFlow(){
+  cx.clearRect(0,0,W,H);
+  // soft side glows
+  const gL=cx.createLinearGradient(0,0,W,0);
+  gL.addColorStop(0,'rgba(242,212,192,.16)');gL.addColorStop(.5,'rgba(250,247,243,0)');gL.addColorStop(1,'rgba(212,234,217,.13)');
+  cx.fillStyle=gL;cx.fillRect(0,0,W,H);
+
+  if(T%16===0){
+    const rows=8;
+    for(let i=0;i<rows;i++){
+      if(Math.random()>.5)continue;
+      fDots.push({x:-10,y:(H/(rows+1))*(i+1)+(Math.random()*28-14),
+        v:Math.random()*1.1+.5,r:Math.random()*3+1.5,
+        c:Math.random()>.5?C_TERRA:C_SAGE,a:Math.random()*.55+.28,w:Math.random()*Math.PI*2});
+    }
+  }
+  fDots=fDots.filter(d=>d.x<W+14);
+  fDots.forEach(d=>{d.x+=d.v;d.w+=.038;const py=d.y+Math.sin(d.w)*10;cx.beginPath();cx.arc(d.x,py,d.r,0,Math.PI*2);cx.fillStyle=d.c(d.a);cx.fill();});
+}
+
+// ── 4. Typing / code blocks (S9) ─────────
+function drawTyping(){
+  cx.clearRect(0,0,W,H);
+  const g=cx.createRadialGradient(W*.15,H*.5,0,W*.15,H*.5,H*.65);
+  g.addColorStop(0,'rgba(201,95,42,.06)');g.addColorStop(1,'rgba(250,247,243,0)');
+  cx.fillStyle=g;cx.fillRect(0,0,W,H);
+
+  const seed=T*.016;
+  for(let i=0;i<9;i++){
+    const bx=W*.07+Math.sin(seed+i*1.35)*W*.07;
+    const by=H*.12+i*(H*.085)+Math.cos(seed+i*.95)*10;
+    const bw=55+Math.sin(i*2.2)*22;
+    cx.fillStyle=C_TERRA((.05+.03*Math.sin(seed+i)).toFixed(3));
+    cx.beginPath();cx.roundRect(bx,by,bw,7,4);cx.fill();
+  }
+  if(Math.floor(T/26)%2===0){
+    cx.fillStyle=C_TERRA('.5');cx.fillRect(W*.48,H*.82,2,20);
+  }
+}
+
+// ── 5. Migration particles (S10) ─────────
+let mDots=[];
+function initMig(){
+  mDots=[];
+  for(let i=0;i<44;i++){
+    mDots.push({x:Math.random()*W*.42,y:H*.15+Math.random()*H*.7,
+      tx:W*.58+Math.random()*W*.37,ty:H*.15+Math.random()*H*.7,
+      p:Math.random(),spd:Math.random()*.0038+.0018,r:Math.random()*3+1.5});
+  }
+}
+function drawMig(){
+  cx.clearRect(0,0,W,H);
+  const gL=cx.createLinearGradient(0,0,W,0);
+  gL.addColorStop(0,'rgba(210,200,195,.13)');gL.addColorStop(.5,'rgba(250,247,243,0)');gL.addColorStop(1,'rgba(212,234,217,.1)');
+  cx.fillStyle=gL;cx.fillRect(0,0,W,H);
+  mDots.forEach(d=>{
+    d.p+=d.spd;if(d.p>=1){d.p=0;d.x=Math.random()*W*.38;d.y=H*.15+Math.random()*H*.7;d.tx=W*.62+Math.random()*W*.33;d.ty=H*.15+Math.random()*H*.7;}
+    const e=d.p<.5?2*d.p*d.p:1-Math.pow(-2*d.p+2,2)/2;
+    const px2=d.x+(d.tx-d.x)*e,py2=d.y+(d.ty-d.y)*e;
+    const a=.2+e*.65;
+    const r=Math.floor(154+e*47),g2=Math.floor(138-e*43),b=Math.floor(124-e*82);
+    cx.beginPath();cx.arc(px2,py2,d.r,0,Math.PI*2);cx.fillStyle=`rgba(${r},${g2},${b},${a.toFixed(2)})`;cx.fill();
+  });
+}
+
+// ── 6. Path journey (S11) ─────────────
+let pDots=[];
+function initPath(){
+  pDots=[];
+  for(let i=0;i<22;i++) pDots.push({p:i/22*1.1-.1,spd:.0022+Math.random()*.001});
+}
+function drawPath(){
+  cx.clearRect(0,0,W,H);
+  const xL=W*.14,xR=W*.86,py=H*.65;
+  cx.beginPath();cx.moveTo(xL,py);cx.lineTo(xR,py);
+  cx.strokeStyle=C_MUTED('.2');cx.lineWidth=2;cx.stroke();
+  [0,1,2,3].forEach(i=>{
+    const sx=xL+(xR-xL)*(i/3);
+    cx.beginPath();cx.arc(sx,py,13,0,Math.PI*2);
+    cx.fillStyle='rgba(250,247,243,1)';
+    cx.strokeStyle=C_TERRA('.3');cx.lineWidth=2;cx.fill();cx.stroke();
+  });
+  pDots.forEach(d=>{
+    d.p+=d.spd;if(d.p>1.12)d.p=-0.08;
+    const t=Math.max(0,Math.min(1,d.p));
+    const px2=xL+(xR-xL)*t;
+    const a=t<.1?t*10:t>.9?(1-t)*10:1;
+    cx.beginPath();cx.arc(px2,py,4,0,Math.PI*2);cx.fillStyle=C_TERRA((.72*a).toFixed(2));cx.fill();
+  });
+}
+
+// ── 7. Expanding burst (S12) ─────────
+let bRings=[];
+function initBurst(){
+  bRings=[];
+  for(let i=0;i<7;i++) bRings.push({r:20+i*52,a:.55-i*.06,speed:.32+i*.02});
+}
+function drawBurst(){
+  cx.clearRect(0,0,W,H);
+  const bx=W/2,by=H/2;
+  const g=cx.createRadialGradient(bx,by,0,bx,by,H*.58);
+  g.addColorStop(0,'rgba(255,236,216,.75)');g.addColorStop(.45,'rgba(250,247,243,.25)');g.addColorStop(1,'rgba(250,247,243,0)');
+  cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  const maxR=Math.max(W,H)*.72;
+  bRings.forEach((ring,i)=>{
+    ring.r+=ring.speed;
+    if(ring.r>maxR)ring.r=18+i*40;
+    const a=Math.max(0,ring.a*(1-ring.r/maxR));
+    cx.beginPath();cx.arc(bx,by,ring.r,0,Math.PI*2);
+    cx.strokeStyle=C_TERRA(a.toFixed(3));cx.lineWidth=1.5;cx.stroke();
+  });
+  const t2=T*.022;
+  for(let i=0;i<8;i++){
+    const ang=t2+i*(Math.PI*2/8);
+    const ox=bx+Math.cos(ang)*H*.29,oy=by+Math.sin(ang)*H*.29;
+    cx.beginPath();cx.arc(ox,oy,4.5,0,Math.PI*2);
+    cx.fillStyle=C_TERRA((.48+.2*Math.sin(t2+i)).toFixed(2));cx.fill();
+  }
+}
+
+// ── Dispatch ──────────────────────
+const animMap=['stars','rip','rip','flow','flow','flow','flow','flow','flow','burst'];
+function initAnim(m){
+  mode=m;
+  if(m==='stars')initStars();
+  if(m==='stars')initStars();
+  if(m==='rip')initRip();
+  if(m==='flow')initFlow();
+  if(m==='mig')initMig();
+  if(m==='path')initPath();
+  if(m==='burst')initBurst();
+}
+function startAnim(idx){initAnim(animMap[idx]||'stars');}
+
+function loop(){
+  T++;
+  if(mode==='stars')drawStars();
+  else if(mode==='rip')drawRip();
+  else if(mode==='flow')drawFlow();
+  else if(mode==='typing')drawTyping();
+  else if(mode==='mig')drawMig();
+  else if(mode==='path')drawPath();
+  else if(mode==='burst')drawBurst();
+  else cx.clearRect(0,0,W,H);
+  requestAnimationFrame(loop);
+}
+
+// ─── i18n 多言語切替 ────────────────────────────
+let currentLang = 'ja';
+
+const I18N = {
+  en: {
+    'ui.logo': 'GitHub Copilot transforms presentations, transforms the world.',
+    'ui.hint': '← → keys or buttons to navigate',
+    'ui.spotBadge': '🔦 Spotlight ON — Press S to dismiss',
+    'ui.ovTitle': 'Slide Overview',
+
+    's1.pill': 'GitHub Copilot × Presentations',
+    's1.h1': 'GitHub Copilot<br>Transforms Presentations,<span class="it">Transforms the World.</span>',
+    's1.p': 'It\'s not just about creating slides.<br>The way you present evolves.<br>This slide itself is the proof.',
+
+    's2.eyebrow': 'Problem',
+    's2.h2': 'Most presentations are still<br><span class="it prob-it">static slideshows</span>.',
+    's2.c1.title': 'Digital, yet still "just flipping pages"',
+    's2.c1.body': 'Despite going digital,<br>we still do the same as paper slideshows.<br>Line up text, flip through in order.<br><strong>The freedom of digital is completely wasted</strong>.',
+    's2.c2.title': 'With interaction, audiences stay engaged',
+    's2.c2.body': 'One-way presentations lose attention.<br>Touch, move, respond.<br><strong>Interactive experiences</strong><br>create audience immersion.',
+    's2.c3.title': 'Structured management enables limitless reuse',
+    's2.c3.body': 'With HTML-based slides,<br><strong>separate data from design</strong>.<br>Updates, translations, and restructuring become effortless.',
+    's2.c4.title': 'Unleash digital power, and presentations evolve',
+    's2.c4.body': 'Interactive, structured,<br>with full freedom.<br><strong>With GitHub Copilot</strong>,<br>anyone can make it happen.',
+    's2.conclusion': 'Let\'s reinvent presentations with GitHub Copilot.',
+
+    's3m.pill': 'Demonstration',
+    's3m.h2': 'This slide has<br><strong>6 interactive features</strong><br>built right in.',
+    's3m.p': 'Touch, feel, and be amazed.<br>All generated by GitHub Copilot.',
+    's3m.f1.name': 'Hover Highlight',
+    's3m.f1.desc': 'Just hover to draw attention',
+    's3m.f2.name': 'Spotlight',
+    's3m.f2.desc': 'Press S to dim & focus',
+    's3m.f3.name': 'Animations',
+    's3m.f3.desc': 'Typing & count-up effects',
+    's3m.f4.name': 'Comparison Slider',
+    's3m.f4.desc': 'Drag to feel the difference',
+    's3m.f5.name': 'Language Toggle',
+    's3m.f5.desc': 'One HTML, two languages',
+    's3m.f6.name': 'Feedback Memo',
+    's3m.f6.desc': 'Memo on the spot → to Copilot',
+
+    's3.h2': 'Hover to<br>Highlight',
+    's3.p': 'Instead of saying "this is important",<br>just hover your mouse.<br>The words you want to emphasize grow naturally,<br>drawing the audience\'s gaze.',
+    's3.card.h': 'Try it now — move your mouse over this slide',
+    's3.li1': 'Hover over a line and the text grows larger',
+    's3.li2': 'Background turns orange to say "this matters"',
+    's3.li3': 'Each line reacts individually for pinpoint delivery',
+
+    's4.h2': 'Spotlight<br>Mode',
+    's4.p': 'Say "look here"<br>without saying a word.<br>The moment you press S,<br>only the area around your mouse is lit,<br>everything else goes dark.',
+    's4.card.h': 'Try it now — press the S key',
+    's4.li1': 'Press S to toggle Spotlight ON / OFF',
+    's4.li2': 'Move your mouse and the light follows',
+    's4.li3': 'Focus the audience\'s gaze on a single point',
+    's4.li4': 'Darkness draws stronger attention than words',
+    's4.li5': 'Press S again to return to the normal view',
+
+    's5.h2': 'Animation<br>Effects',
+    's5.p': 'The moment you enter a slide,<br>text types itself and numbers race.<br>Compared to static slides,<br>it creates an overwhelmingly memorable experience.',
+    's5.card.h': 'Click to experience',
+    's5.labelA': 'Live Typing Effect',
+    's5.labelB': 'Number Count-up',
+    's5.countLabel': 'Comprehension improvement with this presentation',
+
+    's6.h2': 'Comparison<br>Slider',
+    's6.p': 'Drag the vertical line —<br>the "old way" appears on the left, the "Copilot way" on the right.<br>Experience the change firsthand.',
+    's6.card.h': 'Drag the line left/right to compare BEFORE/AFTER',
+    's6.r1.before': '😰 Can\'t code, so it\'s impossible',
+    's6.r1.after': '🎨 Just tell Copilot and it\'s done',
+    's6.r2.before': '😴 Flipping slides, talking one-way',
+    's6.r2.after': '🤝 Touch, move, two-way experience',
+    's6.r3.before': '📝 "I told them" but nothing sticks',
+    's6.r3.after': '🚀 Presentations that drive action',
+
+    's7.h2': 'Language<br>Toggle',
+    's7.p': 'One button switches between Japanese and English.<br>Just a single HTML file.<br>Translation data is built in,<br>switching is instant with no page reload.',
+    's7.card.h': 'Try it now — press the “JP / EN” button at the top right',
+    's7.li1': 'All Japanese and English text in a single HTML',
+    's7.li2': 'One button press switches every slide instantly',
+    's7.li3': 'Adding translations just means adding text to the dictionary',
+
+    's8.h2': 'Feedback<br>Memo',
+    's8.p': 'Note corrections you notice during the presentation,<br>right on each slide.<br>When done, download the text<br>and use it directly as instructions for GitHub Copilot.',
+    's8.card.h': 'Try it now — press the 📝 button at the top right',
+    's8.li1': 'Record slide-by-slide memos instantly during the presentation',
+    's8.li2': 'Slide number and timestamp are added automatically',
+    's8.li3': 'Download as text → paste directly into Copilot for corrections',
+
+    's9.big': 'Let\'s try it!',
+    's9.p': 'We prepared an instruction file<br>to create something just like this.<br>Copy, paste, and hand it to GitHub Copilot.<br>Your presentations become experiences.',
+    's9.link1.title': 'Copy the<br>Instruction File',
+    's9.link1.desc': 'presentation-transform.instructions.md',
+    's9.link2.title': 'Deploy to Azure<br>(No Auth)',
+    's9.link2.desc': 'Create a site<br>anyone can access',
+    's9.link3.title': 'Deploy to Azure<br>(Entra ID Auth)',
+    's9.link3.desc': 'Add Microsoft<br>Entra ID login',
+  }
+};
+
+// Store original Japanese HTML
+const jaStore = {};
+document.querySelectorAll('[data-i18n]').forEach(el => {
+  jaStore[el.getAttribute('data-i18n')] = el.innerHTML;
+});
+
+function applyLang(lang) {
+  currentLang = lang;
+  document.getElementById('lang-ja').classList.toggle('active', lang === 'ja');
+  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+  document.documentElement.lang = lang === 'ja' ? 'ja' : 'en';
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (lang === 'ja') {
+      el.innerHTML = jaStore[key] || el.innerHTML;
+    } else {
+      const val = I18N[lang] && I18N[lang][key];
+      if (val) el.innerHTML = val;
+    }
+  });
+
+  // Re-run splitLines to rebind .hline wrappers
+  rebuildHlines();
+
+  // Update CARD_DATA for modals
+  if (lang === 'en') {
+    CARD_DATA[0] = {icon:'📜',title:'Digital, yet still "just flipping pages"',body:'Despite going digital, we still do the same as paper slideshows. Line up text, flip through in order. <strong>The freedom of digital is completely wasted</strong>.',accent:false};
+    CARD_DATA[1] = {icon:'🔄',title:'With interaction, audiences stay engaged',body:'One-way presentations lose attention. Touch, move, respond. <strong>Interactive experiences</strong> create audience immersion.',accent:false};
+    CARD_DATA[2] = {icon:'🏗️',title:'Structured management enables limitless reuse',body:'With HTML-based slides, <strong>separate data from design</strong>. Updates, translations, and restructuring become effortless.',accent:false};
+    CARD_DATA[3] = {icon:'🚀',title:'Unleash digital power, and presentations evolve',body:'Interactive, structured, with full freedom. <strong>With GitHub Copilot</strong>, anyone can make it happen.',accent:true};
+    CARD_DATA[4] = {icon:'✨',title:'Let\'s reinvent presentations with GitHub Copilot.',body:'Even without programming knowledge, just tell Copilot and <strong>interactive slides are born</strong>. This slide itself is the proof.',accent:true};
+  } else {
+    CARD_DATA[0] = {icon:'📜',title:'せっかくのデジタルなのに、「めくるだけ」',body:'デジタルになったのに、やることは紙芝居と同じ。テキストを並べて、順番にめくる。<strong>デジタルの自由度をまったく活かせていない</strong>。',accent:false};
+    CARD_DATA[1] = {icon:'🔄',title:'インタラクションがあれば、聴衆は離れない',body:'一方通行の発表では集中力が続かない。触れる・動く・反応する。<strong>インタラクティブな体験</strong>が、聴衆の没入を生む。',accent:false};
+    CARD_DATA[2] = {icon:'🏗️',title:'構造的に管理できれば、再利用も自由自在',body:'HTMLベースなら、<strong>データと見た目を分離</strong>できる。更新・翻訳・再構成が圧倒的に楽になる。',accent:false};
+    CARD_DATA[3] = {icon:'🚀',title:'デジタルの力を解放すれば、プレゼンは進化する',body:'インタラクティブに、構造的に、自由度高く。<strong>GitHub Copilot があれば</strong>、それを誰でも実現できる。',accent:true};
+    CARD_DATA[4] = {icon:'✨',title:'GitHub Copilotでプレゼンテーションを再発明しよう。',body:'プログラミングの知識がなくても、Copilot に伝えれば、<strong>インタラクティブなスライドが生まれる</strong>。このスライド自体が、その証明だ。',accent:true};
+  }
+
+  // Update OV_DATA titles
+  if (lang === 'en') {
+    const enOvTitles = ['Title','Problem','Demonstration','Feature 1: Hover','Feature 2: Spotlight','Feature 3: Animation','Feature 4: Slider','Feature 5: Language','Feature 6: Memo','Ending'];
+    const enOvDescs = ['Presentations change, the world changes','Most presentations are still static','Experience 6 interactive features','Highlight while speaking','Press S to focus attention','Typing & count-up experience','Drag to feel the difference','One HTML, two languages','Memo on the spot → to Copilot','Let\'s try it!'];
+    ovGrid.querySelectorAll('.ov-card').forEach((card,i) => {
+      card.querySelector('.ov-title').textContent = enOvTitles[i] || '';
+      card.querySelector('.ov-desc').textContent = enOvDescs[i] || '';
+    });
+  } else {
+    const jaOvTitles = ['タイトル','課題提起','デモンストレーション','仕掛け① マウスオーバー','仕掛け② スポットライト','仕掛け③ アニメーション','仕掛け④ 比較スライダー','仕掛け⑤ 多言語切替','仕掛け⑥ フィードバックメモ','エンディング'];
+    const jaOvDescs = ['プレゼンが変わる、世界が変わる','プレゼンはまだ紙芝居のままだ','6つの仕掛けを体験する','話しながら強調できる','S キーで視線を集中','タイピング & カウントアップ体験','クリックで変化を体感','1つのHTMLで日英対応','その場でメモ → Copilotへ','さあ、やってみましょう！'];
+    ovGrid.querySelectorAll('.ov-card').forEach((card,i) => {
+      card.querySelector('.ov-title').textContent = jaOvTitles[i] || '';
+      card.querySelector('.ov-desc').textContent = jaOvDescs[i] || '';
+    });
+  }
+
+  // If modal is open, re-render it
+  if (cmModal.classList.contains('on')) renderCardModal();
+}
+
+function toggleLang() {
+  applyLang(currentLang === 'ja' ? 'en' : 'ja');
+}
+
+// ─── 1行ずつ .hline に分割 ─────────────────────
+function rebuildHlines(){
+(function splitLines(){
+  // <br> で区切られた要素 → 各行を .hline span で包む
+  const brTargets = document.querySelectorAll(
+    '.slide h1, .slide h2, .slide p, .slide blockquote, .slide .sub, #s12 .big, .wy-title, .wy-body, .wy-conclusion, .demo-feat-name, .demo-feat-desc'
+  );
+
+  brTargets.forEach(el => {
+    // 子ノードをたどり、br で区切ってグループ化
+    const nodes = Array.from(el.childNodes);
+    const groups = [[]];
+    nodes.forEach(n => {
+      if (n.nodeName === 'BR') {
+        groups.push([]);
+      } else {
+        groups[groups.length - 1].push(n.cloneNode(true));
+      }
+    });
+
+    // 空グループを除去
+    const valid = groups.filter(g => g.some(n =>
+      n.nodeType === 3 ? n.textContent.trim() : true
+    ));
+
+    if (valid.length <= 1) {
+      // br がない → 要素自体を hline に
+      el.classList.add('hline');
+      return;
+    }
+
+    // br がある → 各行を span.hline に
+    el.innerHTML = '';
+    valid.forEach(grp => {
+      const span = document.createElement('span');
+      span.className = 'hline';
+      grp.forEach(n => span.appendChild(n));
+      el.appendChild(span);
+    });
+  });
+})();
+} // end rebuildHlines
+rebuildHlines();
+
+startAnim(0);loop();ui();
+</script>
+</body>
+</html>

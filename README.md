@@ -55,7 +55,7 @@ N+1. エンディング: [締めの言葉]
 
 ### Step 2: Azure にデプロイ
 
-| 方式 | リポジトリ |
+| 方式 | 参考 |
 |------|-----------|
 | 🔓 認証なし（全公開） | [azure-no-auth-demo](https://github.com/FukudaRikako/azure-no-auth-demo) |
 | 🔐 Entra ID 認証付き | [azure-entra-auth-demo](https://github.com/FukudaRikako/azure-entra-auth-demo) |

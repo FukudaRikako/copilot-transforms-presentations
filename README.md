@@ -2,7 +2,7 @@
 
 **GitHub Copilot に指示するだけで、インタラクティブなプレゼンテーションが単一HTMLファイルで生成される** — そのデモと、再利用可能なインストラクションファイルです。
 
-🔗 **ライブデモ**: [https://happy-forest-0c9392700.2.azurestaticapps.net](https://happy-forest-0c9392700.2.azurestaticapps.net)
+🔗 **ライブデモ**: [https://agreeable-glacier-02c619200.1.azurestaticapps.net](https://agreeable-glacier-02c619200.1.azurestaticapps.net)
 
 ---
 

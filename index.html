@@ -4,6 +4,16 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>GitHub Copilotでプレゼンが変わる、世界が変わる。</title>
+<meta name="description" content="GitHub Copilot に指示するだけで、インタラクティブなプレゼンテーションが単一HTMLファイルで生成される。6つのインタラクション仕掛けを体験できるデモ。"/>
+<meta property="og:title" content="GitHub Copilotでプレゼンが変わる、世界が変わる。"/>
+<meta property="og:description" content="GitHub Copilot に指示するだけで、インタラクティブなプレゼンテーションが単一HTMLファイルで生成される。6つのインタラクション仕掛けを体験できるデモ。"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://happy-forest-0c9392700.2.azurestaticapps.net"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:site_name" content="GitHub Copilot × Presentations"/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="GitHub Copilotでプレゼンが変わる、世界が変わる。"/>
+<meta name="twitter:description" content="GitHub Copilot に指示するだけで、インタラクティブなプレゼンテーションが単一HTMLファイルで生成される。6つのインタラクション仕掛けを体験できるデモ。"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;700;800&family=Noto+Sans+JP:wght@300;400;500;700&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300;1,600&display=swap" rel="stylesheet"/>
@@ -152,7 +162,13 @@ body{background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',sans-serif
   font-size:clamp(12px,1.3vw,14px);
   color:var(--muted);line-height:1.7;
 }
-@media(max-width:700px){ #s3m .demo-feat-grid{ grid-template-columns:1fr 1fr; } }
+@media(max-width:700px){ #s3m .demo-feat-grid{ grid-template-columns:1fr 1fr;gap:10px; } 
+  .demo-feat{padding:14px 12px;gap:6px;}
+  .demo-feat-icon{font-size:24px;}
+  .demo-feat-num{font-size:13px;}
+  .demo-feat-name{font-size:12px !important;}
+  .demo-feat-desc{font-size:10px !important;line-height:1.4;}
+}
 
 /* USE CASES S3-S8 */
 .ucw{display:grid;grid-template-columns:1fr 1.1fr;gap:48px;align-items:center;width:100%;max-width:1200px;}
@@ -917,20 +933,80 @@ body{background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',sans-serif
 #memo-btn.has-notes{border-color:var(--terra);color:var(--terra);}
 
 @media(max-width:700px){
-  .ucw{grid-template-columns:1fr;gap:22px;}
-  .ucl .bignum{font-size:64px;}
+  .ucw{grid-template-columns:1fr;gap:14px;}
+  .ucl .bignum{font-size:40px;margin-bottom:-8px;}
+  .ucl .icon{font-size:28px;margin-bottom:4px;}
+  .ucl h2{font-size:22px !important;margin-bottom:8px;}
+  .ucl p{font-size:12px !important;line-height:1.7;}
+  .uccard-h{padding:10px 16px;font-size:9px;}
+  .uclist li{padding:8px 16px;font-size:11px !important;line-height:1.5;}
   .baw{grid-template-columns:1fr;}
   .bam{display:none;}
   .bac.bf{border-radius:12px 12px 0 0;}
   .bac.af{border-left:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;}
-  .srow{flex-direction:column;align-items:center;gap:20px;}
+  .srow{flex-direction:column;align-items:center;gap:12px;}
   .srow::before{display:none;}
-  .slide{padding:72px 22px 90px;}
-  #nav{padding:0 20px;}
+  .sstep{width:auto;gap:6px;}
+  .snum{width:36px;height:36px;font-size:16px;}
+  .slbl{font-size:10px;}
+  .slbl strong{font-size:11px;}
+  .slide{padding:52px 16px 72px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  #nav{padding:0 14px;height:56px;}
   #lang-toggle{right:74px;font-size:9px;height:28px;}
   #lang-toggle span{padding:4px 8px;}
   #overview-btn{right:42px;width:28px;height:28px;font-size:13px;}
   #memo-btn{right:10px;width:28px;height:28px;font-size:13px;}
+  .top-logo{font-size:9px;top:14px;left:14px;max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #hint{font-size:8px;padding:4px 10px;top:14px;}
+  /* S1 title */
+  #s1 h1{font-size:28px !important;margin-bottom:14px;}
+  #s1 h1 .it{font-size:22px !important;}
+  #s1 p{font-size:12px !important;line-height:1.8;}
+  /* S2 whynow */
+  .whynow-wrap{gap:12px;}
+  .whynow-header h2{font-size:20px !important;}
+  .whynow-grid{grid-template-columns:1fr;gap:8px;}
+  .wy-card{padding:14px 16px;gap:5px;}
+  .wy-icon{font-size:18px;}
+  .wy-title{font-size:12px !important;}
+  .wy-body{font-size:10px !important;line-height:1.6;}
+  .wy-conclusion{font-size:13px !important;padding:14px 18px;}
+  /* S3m demo overview */
+  #s3m h2{font-size:18px !important;margin-bottom:8px;}
+  #s3m p{font-size:11px !important;}
+  /* S5 anim cards */
+  .anim-card{padding:12px 14px;gap:6px;}
+  .anim-label{font-size:12px;}
+  .anim-trigger{padding:5px 10px;font-size:10px;}
+  .cmsgs{max-height:120px;padding:12px 14px;}
+  .bb{font-size:10px !important;padding:8px 12px;max-width:80%;}
+  .count-demo-box{padding:8px;}
+  .count-demo-num{font-size:32px !important;}
+  .count-unit{font-size:18px !important;}
+  /* S6 comparison slider */
+  .ba-comp-layer{font-size:12px !important;padding:12px 16px;}
+  .ba-comp-row{min-height:56px;}
+  .ba-comp-knob{width:24px;height:24px;font-size:10px;}
+  /* S9 ending */
+  #s9 .big{font-size:28px !important;margin-bottom:18px;}
+  #s9 p{font-size:12px !important;line-height:1.8;}
+  .end-links{flex-direction:column;gap:10px;}
+  .end-link-card{min-width:unset;padding:14px 18px;}
+  .end-link-icon{font-size:22px;}
+  .end-link-title{font-size:12px !important;}
+  .end-link-desc{font-size:10px !important;}
+  /* Card modal */
+  #card-modal{padding:20px 16px;}
+  #card-modal-card{padding:32px 24px;}
+  #card-modal-title{font-size:18px !important;}
+  #card-modal-body{font-size:14px !important;}
+  /* Overview grid */
+  .ov-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .ov-card{padding:12px 10px 10px;}
+  /* Memo panel */
+  #memo-panel{width:100vw;right:-100vw;}
+  #memo-panel.open{right:0;}
+  .cta{padding:12px 28px;font-size:11px;}
 }
 
 #memo-panel{

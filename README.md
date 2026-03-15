@@ -234,32 +234,6 @@ I18N.zh = { 's1.pill': '...', /* 全キー定義 */ };
 ```
 
 ### Step 3: Azure にデプロイ
-- **誰でも見れるサイト**: [azure-no-auth-demo](https://github.com/FukudaRikako/azure-no-auth-demo)
-- **Entra ID 認証付きサイト**: [azure-entra-auth-demo](https://github.com/FukudaRikako/azure-entra-auth-demo)
-
----
-
-*このインストラクションは、GitHub Copilot によるプレゼンテーション HTML 自動生成のために最適化されています。*
-
-```
-このinstructionファイルの仕様に従って、以下の内容で
-インタラクティブなプレゼンテーション HTML を生成してください。
-
-## テーマ
-[あなたのテーマ]
-
-## スライド構成
-1. タイトル: [タイトル]
-2. 課題提起: [問題意識]
-3. デモ概要: [仕掛けの一覧]
-4〜N. 仕掛け: [各スライドの内容]
-N+1. エンディング: [締めの言葉]
-
-## カラーテーマ
-[テラコッタ / ブルー / パープル など]
-```
-
-### Step 2: Azure にデプロイ
 
 | 方式 | リポジトリ |
 |------|-----------|
@@ -285,26 +259,3 @@ N+1. エンディング: [締めの言葉]
 MIT
 
 ```
-
-### Step 2: Azure にデプロイ
-
-| 方式 | 参考 |
-|------|-----------|
-| 🔓 認証なし（全公開） | [azure-no-auth-demo](https://github.com/FukudaRikako/azure-no-auth-demo) |
-| 🔐 Entra ID 認証付き | [azure-entra-auth-demo](https://github.com/FukudaRikako/azure-entra-auth-demo) |
-
----
-
-## 📁 ファイル構成
-
-```
-├── index.html                              # プレゼンテーション本体
-├── presentation-transform.instructions.md  # Copilot 用インストラクション
-└── .github/workflows/                      # GitHub Actions デプロイ設定
-```
-
----
-
-## 📄 ライセンス
-
-MIT
